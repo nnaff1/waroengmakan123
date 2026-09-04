@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+
+const ADMIN_SECRET_PIN = '2026';
 
 export default function AdminLayout({
   children,
@@ -10,25 +12,48 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [inputPin, setInputPin] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newMenu, setNewMenu] = useState({ name: '', category: 'Makanan Utama', price: '' });
+  const [newMenu, setNewMenu] = useState({ name: '', category: 'Hewani (Goreng/Balado)', price: '' });
+
+  useEffect(() => {
+    const authStatus = sessionStorage.getItem('waroeng_admin_auth');
+    if (authStatus === 'true') {
+      setIsAuthenticated(true);
+    }
+    setIsLoadingAuth(false);
+  }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputPin === ADMIN_SECRET_PIN) {
+      sessionStorage.setItem('waroeng_admin_auth', 'true');
+      setIsAuthenticated(true);
+      setErrorMsg('');
+      setInputPin('');
+    } else {
+      setErrorMsg('PIN Keamanan salah! Akses ditolak.');
+    }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('waroeng_admin_auth');
+    setIsAuthenticated(false);
+    setInputPin('');
+  };
 
   const navItems = [
     {
       label: 'Dashboard',
-      href: '/admin/dashboard',
+      href: '/admin',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-        </svg>
-      ),
-    },
-    {
-      label: 'Live Orders',
-      href: '/admin/orders',
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
         </svg>
       ),
     },
@@ -43,7 +68,7 @@ export default function AdminLayout({
     },
     {
       label: 'AI Copilot',
-      href: '/admin',
+      href: '/admin/ai-copilot',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -74,8 +99,63 @@ export default function AdminLayout({
     e.preventDefault();
     alert(`Menu "${newMenu.name}" berhasil ditambahkan!`);
     setIsModalOpen(false);
-    setNewMenu({ name: '', category: 'Makanan Utama', price: '' });
+    setNewMenu({ name: '', category: 'Hewani (Goreng/Balado)', price: '' });
   };
+
+  if (isLoadingAuth) {
+    return <div className="min-h-screen bg-[#F8F6F2]" />;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#F6F2EC] flex items-center justify-center p-6 text-[#2C2623] font-sans">
+        <div className="bg-white max-w-sm w-full p-8 rounded-3xl border border-[#EFECE6] shadow-xl text-center space-y-6">
+          <div className="w-14 h-14 rounded-2xl bg-[#8E3B24]/10 text-[#8E3B24] flex items-center justify-center mx-auto text-2xl font-bold">
+            🔒
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-[#2C2623]">Akses Terbatas</h2>
+            <p className="text-xs text-[#736D69] mt-1.5 leading-relaxed">
+              Area khusus staf pengelola WaroengMakan123. Masukkan PIN keamanan untuk melanjutkan.
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-3.5">
+            <div>
+              <input
+                type="password"
+                placeholder="Masukkan PIN"
+                maxLength={8}
+                value={inputPin}
+                onChange={(e) => {
+                  setInputPin(e.target.value);
+                  setErrorMsg('');
+                }}
+                className="w-full text-center tracking-[0.3em] font-mono text-base border border-[#ECE7E1] rounded-2xl px-4 py-3 bg-[#FAF8F5] focus:outline-none focus:ring-2 focus:ring-[#8E3B24]"
+                autoFocus
+              />
+              {errorMsg && (
+                <p className="text-red-600 text-xs font-semibold mt-2">{errorMsg}</p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-[#8E3B24] hover:bg-[#78301B] text-white py-3 rounded-2xl text-xs font-bold transition-all shadow-sm active:scale-98 cursor-pointer"
+            >
+              Masuk ke Console
+            </button>
+          </form>
+
+          <div className="pt-2 border-t border-[#ECE7E1]">
+            <Link href="/" className="text-xs font-semibold text-[#736D69] hover:text-[#2C2623] inline-flex items-center gap-1">
+              <span>←</span> Kembali ke Halaman Utama
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F6F2] flex text-[#2C2623] font-sans antialiased">
@@ -87,15 +167,13 @@ export default function AdminLayout({
             <p className="text-xs text-[#736D69] font-medium">Admin Console</p>
           </Link>
 
-          {/* New Item Button */}
           <button
             onClick={() => setIsModalOpen(true)}
-            className="w-full bg-[#8E3B24] hover:bg-[#78301B] text-white py-2.5 px-4 rounded-xl text-xs font-semibold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full bg-[#8E3B24] hover:bg-[#78301B] text-white py-2.5 px-4 rounded-xl text-xs font-semibold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
           >
             <span>+</span> New Menu Item
           </button>
 
-          {/* Navigation Links */}
           <nav className="space-y-1.5 text-xs font-semibold text-[#524D4A]">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
@@ -117,39 +195,77 @@ export default function AdminLayout({
           </nav>
         </div>
 
-        {/* Bottom Help & Back to Site */}
-        <div className="pt-4 border-t border-[#E5DEC9] space-y-2">
-          <Link href="/" className="flex items-center gap-3 text-xs font-semibold text-[#8E3B24] hover:underline">
-            <span>←</span> Back to Landing Page
+        <div className="pt-4 border-t border-[#E5DEC9] space-y-3">
+          <Link href="/" className="flex items-center gap-2 text-xs font-semibold text-[#524D4A] hover:text-[#8E3B24]">
+            <span>←</span> Back to Website
           </Link>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 py-2 rounded-xl transition-colors border border-red-200 cursor-pointer"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Kunci & Keluar
+          </button>
         </div>
       </aside>
 
       {/* MAIN CONTENT WRAPPER */}
       <div className="flex-1 flex flex-col min-w-0">
+        {/* CLEAN MODERN TOP NAVBAR */}
         <header className="h-16 bg-[#F8F6F2] border-b border-[#E5DEC9] px-8 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-[#2C2623]">Admin Portal</h2>
-
           <div className="flex items-center gap-4">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search menu or orders..."
-                className="w-64 bg-white border border-[#E0D9CB] rounded-full py-1.5 pl-9 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
-              />
-              <svg className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+            <div>
+              <h2 className="text-sm font-black text-[#2C2623] tracking-tight uppercase">
+                Admin Portal
+              </h2>
+              <p className="text-[10px] text-[#736D69] font-medium hidden sm:block">
+                WaroengMakan123 Console
+              </p>
             </div>
 
-            <button onClick={() => alert('Tidak ada notifikasi baru')} className="p-2 rounded-full hover:bg-[#EBE5D8] text-gray-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="h-5 w-[1px] bg-[#E5DEC9]" />
+
+            <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2.5 py-1 rounded-full text-[11px] font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Resto Buka (Live)</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3.5">
+            <Link
+              href="/kasir"
+              className="inline-flex items-center gap-1.5 bg-white border border-[#DDD5C5] hover:border-[#8E3B24] hover:text-[#8E3B24] text-[#4A4543] px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shadow-[0_1px_2px_rgba(0,0,0,0.04)] active:scale-95"
+            >
+              <svg className="w-3.5 h-3.5 text-[#8E3B24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <span>Buka Kasir</span>
+              <span className="text-[10px] opacity-60">↗</span>
+            </Link>
+
+            <button
+              onClick={() => alert('Ada 3 pesanan baru yang sedang menunggu antrean dapur!')}
+              className="relative p-2 rounded-xl text-[#524D4A] hover:text-[#2C2623] hover:bg-[#EAE4D7] transition-colors cursor-pointer"
+              title="Notifikasi Pesanan"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#8E3B24] ring-2 ring-[#F8F6F2]" />
             </button>
 
-            <div className="w-8 h-8 rounded-full bg-[#8E3B24] text-white flex items-center justify-center text-xs font-bold">
-              A
+            <div className="h-5 w-[1px] bg-[#E5DEC9]" />
+
+            <div className="flex items-center gap-2 pl-1">
+              <div className="w-8 h-8 rounded-full bg-[#8E3B24] text-white flex items-center justify-center text-xs font-black shadow-xs">
+                A
+              </div>
+              <div className="hidden md:block text-left">
+                <p className="text-xs font-bold text-[#2C2623] leading-none">Admin Shift</p>
+                <p className="text-[10px] text-[#736D69] font-medium mt-0.5">Manager</p>
+              </div>
             </div>
           </div>
         </header>
@@ -176,8 +292,8 @@ export default function AdminLayout({
                   required
                   value={newMenu.name}
                   onChange={(e) => setNewMenu({ ...newMenu, name: e.target.value })}
-                  placeholder="e.g., Ayam Geprek Sambal Matah"
-                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs"
+                  placeholder="e.g., Ayam Penyet Sambal Ijo"
+                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs text-[#2C2623] focus:outline-none focus:ring-1 focus:ring-[#8E3B24]"
                 />
               </div>
 
@@ -186,11 +302,12 @@ export default function AdminLayout({
                 <select
                   value={newMenu.category}
                   onChange={(e) => setNewMenu({ ...newMenu, category: e.target.value })}
-                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs"
+                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs text-[#2C2623] focus:outline-none focus:ring-1 focus:ring-[#8E3B24]"
                 >
-                  <option value="Makanan Utama">Makanan Utama</option>
+                  <option value="Hewani (Goreng/Balado)">Hewani (Goreng/Balado)</option>
+                  <option value="Aneka Sayur">Aneka Sayur</option>
+                  <option value="Dimsum & Mochi">Dimsum & Mochi</option>
                   <option value="Minuman">Minuman</option>
-                  <option value="Cemilan">Cemilan</option>
                 </select>
               </div>
 
@@ -202,7 +319,7 @@ export default function AdminLayout({
                   value={newMenu.price}
                   onChange={(e) => setNewMenu({ ...newMenu, price: e.target.value })}
                   placeholder="25000"
-                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs"
+                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs text-[#2C2623] focus:outline-none focus:ring-1 focus:ring-[#8E3B24]"
                 />
               </div>
 
@@ -210,13 +327,13 @@ export default function AdminLayout({
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-full border border-gray-300 text-xs font-semibold"
+                  className="px-4 py-2 rounded-full border border-gray-300 text-xs font-semibold hover:bg-gray-50 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-full bg-[#8E3B24] text-white text-xs font-bold hover:bg-[#78301B]"
+                  className="px-5 py-2 rounded-full bg-[#8E3B24] text-white text-xs font-bold hover:bg-[#78301B] cursor-pointer"
                 >
                   Simpan Menu
                 </button>

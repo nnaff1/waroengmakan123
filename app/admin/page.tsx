@@ -1,372 +1,279 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 
-type ReviewPeriod = 'This Week' | 'This Month';
-
-export default function AICopilotPage() {
-  const [ideaText, setIdeaText] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [reviewPeriod, setReviewPeriod] = useState<ReviewPeriod>('This Week');
-  const [showNewMenuModal, setShowNewMenuModal] = useState(false);
-
-  // Dynamic Output State
-  const [output, setOutput] = useState({
-    igCaption:
-      'Nikmati akhir pekan seru bareng keluarga di WaroengMakan123! 🎉 Dapatkan diskon 20% untuk semua menu keluarga khusus Sabtu-Minggu ini. Yuk, buruan reservasi tempatmu sekarang! 🖐️',
-    hashtags: '#WaroengMakan123 #PromoKeluarga #KulinerNusantara #MakanEnak',
-    waBroadcast:
-      'Halo Sahabat Waroeng! 👋 Ada kabar gembira nih untuk akhir pekanmu.\n\nKhusus Sabtu & Minggu ini, nikmati Promo Spesial Keluarga dengan diskon 20% all items! 🥳🔥🍲\n\nKlik link di bawah untuk reservasi ya! Jangan sampai kehabisan meja! 🥳👇',
-    bundlingIdea:
-      'Berdasarkan tren pesanan, kami sarankan membuat paket: "Paket Hemat Dimsum Kukus + Mochi Aneka Rasa".',
-  });
-
-  // Modal State Form New Menu
-  const [newMenuForm, setNewMenuForm] = useState({
-    name: '',
-    category: 'Makanan Utama',
-    price: '',
-  });
-
-  // Dynamic Review Data based on Period
-  const reviewData = {
-    'This Week': {
-      score: 92,
-      highlight:
-        'Ulasan mayoritas puas dengan rasa bumbu balado yang khas dan konsisten.',
-      actionRequired:
-        'Ada 3 catatan pelanggan minggu ini terkait stok mochi dingin yang cepat habis di malam hari. Pertimbangkan untuk menambah prep porsi sore.',
-    },
-    'This Month': {
-      score: 95,
-      highlight:
-        'Penjualan menu Rendang Sapi naik 35% setelah update foto produk berkualitas tinggi.',
-      actionRequired:
-        'Waktu tunggu pesanan di jam makan siang (12:00-13:00) rata-rata naik 8 menit. Butuh optimasi alur dapur.',
-    },
-  };
-
-  // AI Generation Simulation logic based on prompt keyword
-  const handleGenerate = () => {
-    if (!ideaText.trim()) return;
-
-    setIsGenerating(true);
-
-    setTimeout(() => {
-      const topic = ideaText.toLowerCase();
-
-      let caption = `Spesial promo ${ideaText}! 🎉 Dapatkan penawaran terbaik hanya di WaroengMakan123. Ajak teman dan keluargamu mampir sekarang juga! 🍲✨`;
-      let tags = `#WaroengMakan123 #PromoSpesial #KulinerNusantara #MakanEnak`;
-      let wa = `Halo Kak! 👋 Mampir yuk ke WaroengMakan123!\n\nAda promo menarik nih: ${ideaText}. Kunjungi outlet terdekat atau pesan online sekarang sebelum kehabisan! 🔥🍲`;
-      let bundle = `Berdasarkan ide "${ideaText}", kami menyarankan kombinasi: "Paket Kombo hemat Nasi Balado + Es Kopi Susu Aren".`;
-
-      if (topic.includes('keluarga') || topic.includes('family')) {
-        caption = `Kumpul keluarga jadi makin hangat di WaroengMakan123! 👨‍👩‍👧‍👦 Nikmati Paket Makan Bersama dengan porsi melimpah & harga lebih hemat!`;
-        tags = `#PromoKeluarga #WaroengMakan123 #MakanBersama #KulinerIndonesia`;
-        wa = `Halo Sahabat Waroeng! 👋 Mau makan rame-rame bareng keluarga akhir pekan ini?\n\nManfaatkan Promo Keluarga Spesial Hemat 20%! Meja terbatas, yuk booking sekarang! 🥳❤️`;
-        bundle = `Saran Paket: "Family Feast Combo: 4 Nasi + Rendang Sapi + Ayam Balado + 4 Es Jeruk".`;
-      } else if (topic.includes('pedas') || topic.includes('spicy')) {
-        caption = `Tantang lidahmu dengan promo Pedas Nampol di WaroengMakan123! 🌶️🔥 Dijamin bikin nagih dan keringetan!`;
-        tags = `#PedasNampol #WaroengMakan123 #KulinerPedas #AyamBalado`;
-        wa = `Panggilan buat pecinta pedas! 🌶️🔥\n\nBeli Ayam Balado Extra Pedas hari ini gratis Es Teh Manis buat penawar pedasmu! Gass order sekarang! 🚀`;
-        bundle = `Saran Paket: "Combo Mercon: Ayam Geprek Sambal Ijo + Ceker Mercon + Es Teh Jumbo".`;
-      }
-
-      setOutput({
-        igCaption: caption,
-        hashtags: tags,
-        waBroadcast: wa,
-        bundlingIdea: bundle,
-      });
-
-      setIsGenerating(false);
-    }, 1200);
-  };
-
-  // Clipboard functionality
-  const copyToClipboard = (text: string, fieldName: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(fieldName);
-    setTimeout(() => setCopiedField(null), 2000);
-  };
-
-  const currentReview = reviewData[reviewPeriod];
+export default function AdminDashboardPage() {
+  const [timeRange, setTimeRange] = useState<'hari' | '7hari' | 'bulan'>('hari');
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Title Header */}
+    <div className="space-y-8 max-w-6xl">
+      {/* HEADER OVERVIEW */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-[#2C2623] tracking-tight">AI Marketing Copilot</h1>
-          <p className="text-sm text-[#736D69] mt-1">
-            Generate promos, analyze reviews, and optimize your menu with AI.
+          <h1 className="text-2xl font-black tracking-tight text-[#2C2623]">
+            Dashboard Overview
+          </h1>
+          <p className="text-xs text-[#736D69] mt-1">
+            Pantau performa restoran Anda hari ini.
           </p>
         </div>
-        <button
-          onClick={() => setShowNewMenuModal(true)}
-          className="bg-[#8E3B24] hover:bg-[#78301B] text-white py-2.5 px-5 rounded-full text-xs font-bold transition-all shadow-sm flex items-center gap-2 self-start sm:self-auto"
-        >
-          <span>+</span> Add New Menu
-        </button>
+
+        {/* TIME FILTER BUTTONS */}
+        <div className="bg-[#EFE9DE] p-1 rounded-2xl inline-flex items-center gap-1 border border-[#E2DCce]">
+          <button
+            onClick={() => setTimeRange('hari')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              timeRange === 'hari'
+                ? 'bg-white text-[#2C2623] shadow-sm font-bold'
+                : 'text-[#736D69] hover:text-[#2C2623]'
+            }`}
+          >
+            Hari Ini
+          </button>
+          <button
+            onClick={() => setTimeRange('7hari')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              timeRange === '7hari'
+                ? 'bg-white text-[#2C2623] shadow-sm font-bold'
+                : 'text-[#736D69] hover:text-[#2C2623]'
+            }`}
+          >
+            7 Hari Terakhir
+          </button>
+          <button
+            onClick={() => setTimeRange('bulan')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              timeRange === 'bulan'
+                ? 'bg-white text-[#2C2623] shadow-sm font-bold'
+                : 'text-[#736D69] hover:text-[#2C2623]'
+            }`}
+          >
+            Bulan Ini
+          </button>
+        </div>
       </div>
 
-      {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* LEFT COLUMN: Promo Generator & AI Suggestions (8 Cols) */}
-        <div className="lg:col-span-8 space-y-6">
-          
-          {/* Promo Generator Card */}
-          <div className="bg-white rounded-3xl p-6 border border-[#E5DEC9] shadow-sm space-y-4">
-            <div className="flex items-center gap-2 text-[#4E6148] font-bold text-base">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              <span>Promo Generator</span>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-[#8C857B] uppercase tracking-wider block">
-                YOUR IDEA
-              </label>
-              <textarea
-                rows={3}
-                value={ideaText}
-                onChange={(e) => setIdeaText(e.target.value)}
-                placeholder="Ketik ide promo Anda... (e.g., promo akhir pekan untuk keluarga)"
-                className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-2xl p-4 text-xs text-[#2C2623] focus:outline-none focus:ring-2 focus:ring-[#4E6148] resize-none"
-              />
-            </div>
-
-            <div className="flex justify-end pt-1">
-              <button
-                type="button"
-                onClick={handleGenerate}
-                disabled={isGenerating || !ideaText.trim()}
-                className={`text-xs font-bold px-7 py-3 rounded-full transition-all shadow-sm flex items-center gap-2 ${
-                  isGenerating || !ideaText.trim()
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-[#8E3B24] hover:bg-[#78301B] text-white'
-                }`}
-              >
-                {isGenerating ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Generating...</span>
-                  </>
-                ) : (
-                  'Generate'
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* AI SUGGESTIONS SECTION */}
-          <div className="space-y-3">
-            <span className="text-[11px] font-bold text-[#8C857B] uppercase tracking-wider block">
-              AI SUGGESTIONS
-            </span>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Instagram Caption Card */}
-              <div className="bg-[#F8F5F0] rounded-2xl p-5 border border-[#E8E1D5] space-y-3 flex flex-col justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#8E3B24]">
-                      <span>📷</span> Instagram Caption
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(`${output.igCaption}\n\n${output.hashtags}`, 'ig')}
-                      className="text-[10px] font-bold text-[#8E3B24] hover:underline"
-                    >
-                      {copiedField === 'ig' ? 'Tersalin! ✅' : 'Salin'}
-                    </button>
-                  </div>
-                  <p className="text-xs text-[#4A4543] leading-relaxed">
-                    {output.igCaption}
-                  </p>
-                </div>
-                <div className="pt-2 text-[10px] font-semibold text-[#736D69]">
-                  {output.hashtags}
-                </div>
-              </div>
-
-              {/* WhatsApp Broadcast Card */}
-              <div className="bg-[#F8F5F0] rounded-2xl p-5 border border-[#E8E1D5] space-y-3 flex flex-col justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#4E6148]">
-                      <span>💬</span> WhatsApp Broadcast
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(output.waBroadcast, 'wa')}
-                      className="text-[10px] font-bold text-[#4E6148] hover:underline"
-                    >
-                      {copiedField === 'wa' ? 'Tersalin! ✅' : 'Salin'}
-                    </button>
-                  </div>
-                  <p className="text-xs text-[#4A4543] leading-relaxed whitespace-pre-line">
-                    {output.waBroadcast}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Menu Bundling Idea Card */}
-            <div className="bg-[#F8F5F0] rounded-2xl p-4 border border-[#E8E1D5] flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-lg shadow-sm border border-[#E0D9CB] shrink-0">
-                💡
-              </div>
-              <div>
-                <span className="text-[11px] font-bold text-[#6C6663] block">Menu Bundling Idea</span>
-                <p className="text-xs text-[#2C2623] font-semibold">
-                  {output.bundlingIdea}
-                </p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* RIGHT COLUMN: Review Insights (4 Cols) */}
-        <div className="lg:col-span-4 bg-[#F8F5F0] rounded-3xl p-6 border border-[#E5DEC9] space-y-6">
+      {/* 4 STAT CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Total Pendapatan */}
+        <div className="bg-white rounded-3xl p-5 border border-[#EBE5D8] shadow-sm space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-[#8E3B24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            <span className="text-[10px] font-bold tracking-wider text-[#938C87] uppercase">
+              Total Pendapatan Hari Ini
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <h3 className="font-extrabold text-base text-[#2C2623]">Review Insights</h3>
             </div>
-            
-            {/* Interactive Period Switcher */}
-            <select
-              value={reviewPeriod}
-              onChange={(e) => setReviewPeriod(e.target.value as ReviewPeriod)}
-              className="bg-[#EAE5D9] text-[#2C2623] text-[11px] font-bold px-3 py-1.5 rounded-full border-none focus:outline-none cursor-pointer"
-            >
-              <option value="This Week">This Week</option>
-              <option value="This Month">This Month</option>
-            </select>
           </div>
+          <div className="text-2xl font-black text-[#2C2623]">
+            Rp 12.500.000
+          </div>
+          <div className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
+            <span>↗ +12%</span>
+            <span className="text-[#938C87] font-normal">vs kemarin</span>
+          </div>
+        </div>
 
-          {/* Satisfaction Score Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-[#2C2623] transition-all duration-300">
-                {currentReview.score}%
-              </span>
-              <span className="text-xs font-semibold text-[#736D69]">Satisfaction Score</span>
+        {/* Total Pesanan */}
+        <div className="bg-white rounded-3xl p-5 border border-[#EBE5D8] shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold tracking-wider text-[#938C87] uppercase">
+              Total Pesanan
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
             </div>
-            <div className="w-full bg-[#E5DEC9] h-2.5 rounded-full overflow-hidden">
-              <div
-                className="bg-[#4E6148] h-full rounded-full transition-all duration-500"
-                style={{ width: `${currentReview.score}%` }}
+          </div>
+          <div className="text-2xl font-black text-[#2C2623]">
+            145
+          </div>
+          <div className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
+            <span>↗ +5%</span>
+            <span className="text-[#938C87] font-normal">vs kemarin</span>
+          </div>
+        </div>
+
+        {/* Rata-rata Nilai Pesanan */}
+        <div className="bg-white rounded-3xl p-5 border border-[#EBE5D8] shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold tracking-wider text-[#938C87] uppercase">
+              Rata-rata Nilai Pesanan
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+          <div className="text-2xl font-black text-[#2C2623]">
+            Rp 86.200
+          </div>
+          <div className="text-[11px] font-semibold text-red-700 flex items-center gap-1">
+            <span>↘ -2%</span>
+            <span className="text-[#938C87] font-normal">vs kemarin</span>
+          </div>
+        </div>
+
+        {/* Menu Terlaris Hari Ini */}
+        <div className="bg-white rounded-3xl p-5 border border-[#EBE5D8] shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold tracking-wider text-[#938C87] uppercase">
+              Menu Terlaris Hari Ini
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-700 flex items-center justify-center">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="relative w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-black/5 bg-stone-100">
+              <Image
+                src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=80"
+                alt="Ayam Goreng Balado"
+                fill
+                className="object-cover"
               />
             </div>
-          </div>
-
-          {/* Highlight Box */}
-          <div className="bg-[#EAE5DC]/60 rounded-2xl p-4 border border-[#DFD8CB] text-xs text-[#4A4543] leading-relaxed">
-            <span className="font-bold text-[#2C2623]">Highlight: </span>
-            {currentReview.highlight}
-          </div>
-
-          {/* Action Required Box */}
-          <div className="bg-[#FDECEB] rounded-2xl p-4 border border-[#FAD4D0] space-y-1">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#C0392B]">
-              <span>⚠️</span> Action Required
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[#2C2623] truncate">Ayam Goreng Balado</p>
+              <p className="text-[11px] text-[#736D69]">48 porsi terjual</p>
             </div>
-            <p className="text-xs text-[#5C2C28] leading-relaxed">
-              {currentReview.actionRequired}
-            </p>
           </div>
         </div>
-
       </div>
 
-      {/* MODAL ADD NEW MENU */}
-      {showNewMenuModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 border border-[#E5DEC9] shadow-xl">
-            <div className="flex items-center justify-between border-b pb-3 border-[#E5DEC9]">
-              <h3 className="font-bold text-lg text-[#2C2623]">Tambah Menu Baru</h3>
-              <button
-                onClick={() => setShowNewMenuModal(false)}
-                className="text-gray-400 hover:text-gray-600 font-bold text-sm"
-              >
-                ✕
-              </button>
+      {/* SALES TREND CHART CARD */}
+      <div className="bg-white rounded-3xl p-6 border border-[#EBE5D8] shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-base font-bold text-[#2C2623]">Sales Trend</h3>
+            <p className="text-xs text-[#736D69] mt-0.5">Grafik volume pesanan Dine-in vs Takeaway</p>
+          </div>
+          <div className="flex items-center gap-4 text-xs font-semibold">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#4E6148]"></span>
+              <span className="text-[#524D4A]">Dine-in</span>
             </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                alert(`Menu "${newMenuForm.name}" berhasil ditambahkan!`);
-                setShowNewMenuModal(false);
-                setNewMenuForm({ name: '', category: 'Makanan Utama', price: '' });
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="text-xs font-bold text-[#736D69] block mb-1">Nama Menu</label>
-                <input
-                  type="text"
-                  required
-                  value={newMenuForm.name}
-                  onChange={(e) => setNewMenuForm({ ...newMenuForm, name: e.target.value })}
-                  placeholder="e.g., Ayam Geprek Sambal Matah"
-                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-[#736D69] block mb-1">Kategori</label>
-                <select
-                  value={newMenuForm.category}
-                  onChange={(e) => setNewMenuForm({ ...newMenuForm, category: e.target.value })}
-                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs"
-                >
-                  <option value="Makanan Utama">Makanan Utama</option>
-                  <option value="Minuman">Minuman</option>
-                  <option value="Cemilan">Cemilan</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-[#736D69] block mb-1">Harga (Rp)</label>
-                <input
-                  type="number"
-                  required
-                  value={newMenuForm.price}
-                  onChange={(e) => setNewMenuForm({ ...newMenuForm, price: e.target.value })}
-                  placeholder="25000"
-                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowNewMenuModal(false)}
-                  className="px-4 py-2 rounded-full border border-gray-300 text-xs font-semibold"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-full bg-[#8E3B24] text-white text-xs font-bold hover:bg-[#78301B]"
-                >
-                  Simpan Menu
-                </button>
-              </div>
-            </form>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#8E3B24]"></span>
+              <span className="text-[#524D4A]">Takeaway</span>
+            </div>
           </div>
         </div>
-      )}
+
+        {/* SVG Representation of Trend Lines */}
+        <div className="w-full h-56 relative pt-4">
+          <svg className="w-full h-full overflow-visible" viewBox="0 0 800 200" preserveAspectRatio="none">
+            {/* Horizontal Grid lines */}
+            <line x1="0" y1="40" x2="800" y2="40" stroke="#F3EFE6" strokeWidth="1" />
+            <line x1="0" y1="90" x2="800" y2="90" stroke="#F3EFE6" strokeWidth="1" />
+            <line x1="0" y1="140" x2="800" y2="140" stroke="#F3EFE6" strokeWidth="1" />
+            <line x1="0" y1="190" x2="800" y2="190" stroke="#F3EFE6" strokeWidth="1" />
+
+            {/* Dine-in Curve (Green) */}
+            <path
+              d="M 0 160 Q 200 60, 400 70 T 800 50"
+              fill="none"
+              stroke="#4E6148"
+              strokeWidth="3"
+            />
+            {/* Takeaway Curve (Terracotta dashed) */}
+            <path
+              d="M 0 175 Q 200 120, 400 110 T 800 120"
+              fill="none"
+              stroke="#8E3B24"
+              strokeWidth="2.5"
+              strokeDasharray="6 4"
+            />
+          </svg>
+
+          {/* Time markers */}
+          <div className="flex justify-between text-[10px] text-[#938C87] font-semibold pt-3">
+            <span>10:00</span>
+            <span>12:00</span>
+            <span>14:00</span>
+            <span>16:00</span>
+            <span>18:00</span>
+            <span>20:00</span>
+            <span>21:00</span>
+          </div>
+        </div>
+      </div>
+
+      {/* BOTTOM 2 COLUMNS: TOP 5 MENU & LOW STOCK ALERT */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top 5 Menu */}
+        <div className="bg-white rounded-3xl p-6 border border-[#EBE5D8] shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b pb-3 border-[#F0ECE6]">
+            <h4 className="text-sm font-bold text-[#2C2623]">Top 5 Menu Paling Laris</h4>
+            <span className="text-[11px] font-semibold text-[#8E3B24] cursor-pointer hover:underline">
+              Lihat Semua
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              { name: 'Ayam Goreng Balado', sold: '48 porsi', price: 'Rp 25.000' },
+              { name: 'Dimsum Siu Mai Kukus', sold: '39 porsi', price: 'Rp 18.000' },
+              { name: 'Mochi Daifuku Strawberry', sold: '34 porsi', price: 'Rp 15.000' },
+              { name: 'Tumis Kangkung Terasi', sold: '29 porsi', price: 'Rp 12.000' },
+              { name: 'Es Jeruk Nipis Madu', sold: '25 gelas', price: 'Rp 8.000' },
+            ].map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between py-1.5">
+                <div className="flex items-center gap-3">
+                  <span className="w-5 text-xs font-bold text-[#938C87]">{idx + 1}</span>
+                  <div>
+                    <p className="text-xs font-bold text-[#2C2623]">{item.name}</p>
+                    <p className="text-[10px] text-[#736D69]">{item.sold}</p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-[#2C2623]">{item.price}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Low Stock Alert */}
+        <div className="bg-white rounded-3xl p-6 border border-[#EBE5D8] shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b pb-3 border-[#F0ECE6]">
+            <div className="flex items-center gap-2">
+              <span className="text-amber-600">⚠️</span>
+              <h4 className="text-sm font-bold text-[#2C2623]">Low Stock Alert</h4>
+            </div>
+            <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              3 Bahan Kritis
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              { name: 'Bahan Kulit Mochi (Tepung Ketan)', remaining: 'Sisa 1.2 kg', status: 'Kritis' },
+              { name: 'Strawberry Segar (Daifuku)', remaining: 'Sisa 8 pack', status: 'Menipis' },
+              { name: 'Daging Ayam Paha Fillet', remaining: 'Sisa 3.5 kg', status: 'Menipis' },
+            ].map((item, idx) => (
+              <div key={idx} className="p-3 bg-[#FAF8F5] rounded-2xl border border-[#ECE7E1] flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-[#2C2623]">{item.name}</p>
+                  <p className="text-[10px] text-[#736D69]">{item.remaining}</p>
+                </div>
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
+                  item.status === 'Kritis'
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {item.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
