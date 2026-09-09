@@ -146,7 +146,6 @@ export default function MenuManagerPage() {
     const priceNum = Number(formData.price) || 0;
 
     if (editingItem) {
-      // Update
       setMenuList((prev) =>
         prev.map((item) =>
           item.id === editingItem.id
@@ -164,7 +163,6 @@ export default function MenuManagerPage() {
         )
       );
     } else {
-      // Create
       const newItem: MenuItemAdmin = {
         id: `m-${Date.now()}`,
         name: formData.name,
@@ -192,54 +190,58 @@ export default function MenuManagerPage() {
   const outOfStockCount = menuList.filter((m) => !m.isAvailable).length;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Title Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="w-full max-w-[1800px] mx-auto space-y-6 xl:space-y-8 2xl:space-y-10 text-[#2C2623] p-2 sm:p-4 xl:p-6">
+      {/* TITLE HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5DEC9] pb-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-[#2C2623] tracking-tight">Menu Manager</h1>
-          <p className="text-sm text-[#736D69] mt-1">Daftar dan kelola seluruh item menu restoran Anda.</p>
+          <h1 className="text-2xl sm:text-3xl xl:text-4xl 2xl:text-5xl font-extrabold text-[#2C2623] tracking-tight">
+            Menu Manager
+          </h1>
+          <p className="text-xs xl:text-sm 2xl:text-base text-[#736D69] mt-1">
+            Daftar dan kelola seluruh item menu restoran Anda.
+          </p>
         </div>
         <button
           onClick={handleOpenCreateModal}
-          className="bg-[#8E3B24] hover:bg-[#78301B] text-white py-2.5 px-5 rounded-full text-xs font-bold transition-all shadow-sm flex items-center gap-2 self-start sm:self-auto"
+          className="bg-[#8E3B24] hover:bg-[#78301B] text-white py-2.5 xl:py-3 px-5 xl:px-7 rounded-full text-xs xl:text-sm font-bold transition-all shadow-sm flex items-center gap-2 self-start sm:self-auto cursor-pointer"
         >
           <span>+</span> Tambah Menu Baru
         </button>
       </div>
 
-      {/* Summary Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-[#E5DEC9] shadow-sm">
-          <span className="text-xs font-bold text-[#736D69] uppercase tracking-wider">Total Menu</span>
-          <p className="text-2xl font-black text-[#2C2623] mt-1">{menuList.length}</p>
+      {/* SUMMARY METRICS */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 xl:gap-6 2xl:gap-8">
+        <div className="bg-white p-5 xl:p-7 2xl:p-8 rounded-2xl xl:rounded-3xl border border-[#E5DEC9] shadow-xs">
+          <span className="text-xs xl:text-sm font-bold text-[#736D69] uppercase tracking-wider">Total Menu</span>
+          <p className="text-2xl xl:text-3xl 2xl:text-4xl font-black text-[#2C2623] mt-1">{menuList.length}</p>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-[#E5DEC9] shadow-sm">
-          <span className="text-xs font-bold text-[#4E6148] uppercase tracking-wider">Menu Aktif</span>
-          <p className="text-2xl font-black text-[#4E6148] mt-1">{activeCount}</p>
+        <div className="bg-white p-5 xl:p-7 2xl:p-8 rounded-2xl xl:rounded-3xl border border-[#E5DEC9] shadow-xs">
+          <span className="text-xs xl:text-sm font-bold text-[#4E6148] uppercase tracking-wider">Menu Aktif</span>
+          <p className="text-2xl xl:text-3xl 2xl:text-4xl font-black text-[#4E6148] mt-1">{activeCount}</p>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-[#E5DEC9] shadow-sm">
-          <span className="text-xs font-bold text-[#C0392B] uppercase tracking-wider">Stok Kosong</span>
-          <p className="text-2xl font-black text-[#C0392B] mt-1">{outOfStockCount}</p>
+        <div className="bg-white p-5 xl:p-7 2xl:p-8 rounded-2xl xl:rounded-3xl border border-[#E5DEC9] shadow-xs">
+          <span className="text-xs xl:text-sm font-bold text-[#C0392B] uppercase tracking-wider">Stok Kosong</span>
+          <p className="text-2xl xl:text-3xl 2xl:text-4xl font-black text-[#C0392B] mt-1">{outOfStockCount}</p>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-[#E5DEC9] shadow-sm">
-          <span className="text-xs font-bold text-[#8E3B24] uppercase tracking-wider">Rata-rata Harga</span>
-          <p className="text-2xl font-black text-[#2C2623] mt-1">
+        <div className="bg-white p-5 xl:p-7 2xl:p-8 rounded-2xl xl:rounded-3xl border border-[#E5DEC9] shadow-xs">
+          <span className="text-xs xl:text-sm font-bold text-[#8E3B24] uppercase tracking-wider">Rata-rata Harga</span>
+          <p className="text-2xl xl:text-3xl 2xl:text-4xl font-black text-[#2C2623] mt-1">
             Rp {Math.round(menuList.reduce((acc, curr) => acc + curr.price, 0) / (menuList.length || 1)).toLocaleString('id-ID')}
           </p>
         </div>
       </div>
 
-      {/* Search & Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-[#E5DEC9] shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full sm:w-80">
+      {/* SEARCH & FILTER BAR */}
+      <div className="bg-white p-4 xl:p-6 rounded-2xl xl:rounded-3xl border border-[#E5DEC9] shadow-xs flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full sm:w-80 xl:w-96">
           <input
             type="text"
             placeholder="Cari nama menu..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
+            className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-full py-2 xl:py-2.5 pl-9 pr-4 text-xs xl:text-sm focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
           />
-          <svg className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-gray-400 absolute left-3 top-2.5 xl:top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
@@ -249,9 +251,9 @@ export default function MenuManagerPage() {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`px-4 xl:px-5 py-1.5 xl:py-2 rounded-full text-xs xl:text-sm font-bold transition-all cursor-pointer ${
                 selectedCategory === cat
-                  ? 'bg-[#6B7C5E] text-white shadow-sm'
+                  ? 'bg-[#6B7C5E] text-white shadow-xs'
                   : 'bg-[#F2EDE4] text-[#524D4A] hover:bg-[#E4DCCF]'
               }`}
             >
@@ -261,17 +263,17 @@ export default function MenuManagerPage() {
         </div>
       </div>
 
-      {/* Menu Data Table */}
-      <div className="bg-white rounded-3xl border border-[#E5DEC9] overflow-hidden shadow-sm">
+      {/* MENU DATA TABLE */}
+      <div className="bg-white rounded-3xl border border-[#E5DEC9] overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs xl:text-sm">
             <thead className="bg-[#F2EDE4] text-[#2C2623] font-bold border-b border-[#E5DEC9]">
               <tr>
-                <th className="p-4">Item Menu</th>
-                <th className="p-4">Kategori</th>
-                <th className="p-4">Harga</th>
-                <th className="p-4">Status Stok</th>
-                <th className="p-4 text-right">Aksi</th>
+                <th className="p-4 xl:p-5">Item Menu</th>
+                <th className="p-4 xl:p-5">Kategori</th>
+                <th className="p-4 xl:p-5">Harga</th>
+                <th className="p-4 xl:p-5">Status Stok</th>
+                <th className="p-4 xl:p-5 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5DEC9]">
@@ -284,44 +286,44 @@ export default function MenuManagerPage() {
               ) : (
                 filteredMenu.map((item) => (
                   <tr key={item.id} className="hover:bg-[#FDFBF7] transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-[#E5DEC9]">
+                    <td className="p-4 xl:p-5">
+                      <div className="flex items-center gap-3 xl:gap-4">
+                        <div className="relative w-12 h-12 xl:w-14 xl:h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-[#E5DEC9]">
                           <Image
                             src={item.image}
                             alt={item.name}
                             fill
-                            sizes="48px"
+                            sizes="60px"
                             className="object-cover"
                           />
                         </div>
                         <div>
-                          <div className="font-bold text-[#2C2623] text-sm flex items-center gap-1.5">
+                          <div className="font-bold text-[#2C2623] text-sm xl:text-base flex items-center gap-2">
                             <span>{item.name}</span>
                             {item.isPopular && (
-                              <span className="bg-[#8E3B24] text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">
+                              <span className="bg-[#8E3B24] text-white text-[9px] xl:text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
                                 Favorit
                               </span>
                             )}
                           </div>
-                          <p className="text-[#736D69] text-[11px] line-clamp-1 max-w-xs mt-0.5">
+                          <p className="text-[#736D69] text-[11px] xl:text-xs line-clamp-1 max-w-xs xl:max-w-md mt-0.5">
                             {item.description}
                           </p>
                         </div>
                       </div>
                     </td>
-                    <td className="p-4">
-                      <span className="bg-[#F2EDE4] text-[#524D4A] font-semibold px-2.5 py-1 rounded-full text-[11px]">
+                    <td className="p-4 xl:p-5">
+                      <span className="bg-[#F2EDE4] text-[#524D4A] font-semibold px-3 py-1 rounded-full text-[11px] xl:text-xs">
                         {item.category}
                       </span>
                     </td>
-                    <td className="p-4 font-bold text-[#2C2623]">
+                    <td className="p-4 xl:p-5 font-bold text-[#2C2623] text-xs xl:text-sm">
                       Rp {item.price.toLocaleString('id-ID')}
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 xl:p-5">
                       <button
                         onClick={() => handleToggleStatus(item.id)}
-                        className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
+                        className={`px-3 py-1.5 rounded-full text-[10px] xl:text-xs font-bold transition-all cursor-pointer ${
                           item.isAvailable
                             ? 'bg-[#EAEFE8] text-[#4E6148] hover:bg-emerald-200'
                             : 'bg-[#FDECEB] text-[#C0392B] hover:bg-red-200'
@@ -330,16 +332,16 @@ export default function MenuManagerPage() {
                         {item.isAvailable ? '● Tersedia' : '○ Stok Kosong'}
                       </button>
                     </td>
-                    <td className="p-4 text-right space-x-2">
+                    <td className="p-4 xl:p-5 text-right space-x-2">
                       <button
                         onClick={() => handleOpenEditModal(item)}
-                        className="text-xs font-bold text-blue-600 hover:underline px-2 py-1"
+                        className="text-xs xl:text-sm font-bold text-blue-600 hover:underline px-2 py-1 cursor-pointer"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(item.id, item.name)}
-                        className="text-xs font-bold text-red-600 hover:underline px-2 py-1"
+                        className="text-xs xl:text-sm font-bold text-red-600 hover:underline px-2 py-1 cursor-pointer"
                       >
                         Hapus
                       </button>
@@ -352,39 +354,39 @@ export default function MenuManagerPage() {
         </div>
       </div>
 
-      {/* Modal Add / Edit Form */}
+      {/* MODAL ADD / EDIT FORM */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-lg w-full space-y-4 border border-[#E5DEC9] shadow-xl">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 xl:p-8 max-w-lg xl:max-w-xl w-full space-y-4 border border-[#E5DEC9] shadow-xl">
             <div className="flex items-center justify-between border-b pb-3 border-[#E5DEC9]">
-              <h3 className="font-bold text-lg text-[#2C2623]">
+              <h3 className="font-bold text-lg xl:text-xl text-[#2C2623]">
                 {editingItem ? 'Edit Item Menu' : 'Tambah Menu Baru'}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-sm">
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-sm cursor-pointer">
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleSubmitForm} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-[#736D69] block mb-1">Nama Menu</label>
+                <label className="text-xs xl:text-sm font-bold text-[#736D69] block mb-1">Nama Menu</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g., Nasi Ayam Geprek Sambal Matah"
-                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
+                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 xl:p-3 text-xs xl:text-sm focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-[#736D69] block mb-1">Kategori</label>
+                  <label className="text-xs xl:text-sm font-bold text-[#736D69] block mb-1">Kategori</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value as MenuItemAdmin['category'] })}
-                    className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
+                    className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 xl:p-3 text-xs xl:text-sm focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
                   >
                     <option value="Makanan Utama">Makanan Utama</option>
                     <option value="Minuman">Minuman</option>
@@ -392,42 +394,42 @@ export default function MenuManagerPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-[#736D69] block mb-1">Harga (Rp)</label>
+                  <label className="text-xs xl:text-sm font-bold text-[#736D69] block mb-1">Harga (Rp)</label>
                   <input
                     type="number"
                     required
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                     placeholder="25000"
-                    className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
+                    className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 xl:p-3 text-xs xl:text-sm focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[#736D69] block mb-1">URL Gambar (Unsplash/Direct Image)</label>
+                <label className="text-xs xl:text-sm font-bold text-[#736D69] block mb-1">URL Gambar (Unsplash/Direct Image)</label>
                 <input
                   type="url"
                   value={formData.image}
                   onChange={(e) => setFormData({ ...formData, image: e.target.value })}
                   placeholder="https://images.unsplash.com/photo-..."
-                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
+                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 xl:p-3 text-xs xl:text-sm focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[#736D69] block mb-1">Deskripsi Menu</label>
+                <label className="text-xs xl:text-sm font-bold text-[#736D69] block mb-1">Deskripsi Menu</label>
                 <textarea
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Keterangan bahan atau cita rasa..."
-                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#6B7C5E] resize-none"
+                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 xl:p-3 text-xs xl:text-sm focus:outline-none focus:ring-1 focus:ring-[#6B7C5E] resize-none"
                 />
               </div>
 
               <div className="flex items-center gap-6 pt-1">
-                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                <label className="flex items-center gap-2 text-xs xl:text-sm font-semibold cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formData.isPopular}
@@ -436,7 +438,7 @@ export default function MenuManagerPage() {
                   />
                   <span>Tandai Menu Favorit</span>
                 </label>
-                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                <label className="flex items-center gap-2 text-xs xl:text-sm font-semibold cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formData.isAvailable}
@@ -451,13 +453,13 @@ export default function MenuManagerPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-full border border-gray-300 text-xs font-semibold hover:bg-gray-100"
+                  className="px-4 py-2 rounded-full border border-gray-300 text-xs xl:text-sm font-semibold hover:bg-gray-100 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-full bg-[#8E3B24] text-white text-xs font-bold hover:bg-[#78301B]"
+                  className="px-5 py-2 rounded-full bg-[#8E3B24] text-white text-xs xl:text-sm font-bold hover:bg-[#78301B] cursor-pointer"
                 >
                   {editingItem ? 'Simpan Perubahan' : 'Tambah Menu'}
                 </button>

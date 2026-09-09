@@ -94,12 +94,16 @@ export default function LandingPage() {
       <Hero />
       <MealMatcher onAddToCart={addToCart} />
 
-      {/* KATALOG MENU */}
-      <section id="menu" className="max-w-7xl mx-auto w-full px-6 py-20 scroll-mt-10">
+      {/* KATALOG MENU RESPONSIVE */}
+      <section id="menu" className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 xl:px-10 py-16 xl:py-24 scroll-mt-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div>
-            <h2 className="text-3xl font-extrabold text-[#2C2623] tracking-tight">Katalog Pilihan</h2>
-            <p className="text-xs sm:text-sm text-[#6C6663] mt-1">Diramu higienis dengan bumbu rempah asli Nusantara.</p>
+            <h2 className="text-3xl sm:text-4xl xl:text-5xl font-extrabold text-[#2C2623] tracking-tight">
+              Katalog Pilihan
+            </h2>
+            <p className="text-xs sm:text-sm xl:text-base text-[#6C6663] mt-1.5">
+              Diramu higienis dengan bumbu rempah asli Nusantara.
+            </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -108,7 +112,7 @@ export default function LandingPage() {
               placeholder="Cari sajian favorit..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-white border border-[#E2DDD5] rounded-full px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#8E3B24]"
+              className="bg-white border border-[#E2DDD5] rounded-full px-4 py-2 xl:py-2.5 text-xs xl:text-sm focus:outline-none focus:ring-2 focus:ring-[#8E3B24] w-full sm:w-64 xl:w-80"
             />
 
             <div className="flex flex-wrap gap-1 bg-[#F1ECE4] p-1 rounded-full border border-[#E2DDD5]">
@@ -116,8 +120,8 @@ export default function LandingPage() {
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                    activeCategory === cat ? 'bg-[#8E3B24] text-white shadow-sm' : 'text-[#6C6663] hover:text-black'
+                  className={`px-3.5 xl:px-5 py-1.5 xl:py-2 rounded-full text-xs xl:text-sm font-semibold transition-all cursor-pointer ${
+                    activeCategory === cat ? 'bg-[#8E3B24] text-white shadow-xs' : 'text-[#6C6663] hover:text-black'
                   }`}
                 >
                   {cat}
@@ -128,43 +132,49 @@ export default function LandingPage() {
         </div>
 
         {filteredMenu.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-300">
-            <p className="text-sm text-gray-500 font-medium">Menu yang dicari tidak ditemukan.</p>
+          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-300">
+            <p className="text-sm xl:text-base text-gray-500 font-medium">Menu yang dicari tidak ditemukan.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 xl:gap-8">
             {filteredMenu.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-2xl overflow-hidden border border-[#EFECE6] shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
+                className="bg-white rounded-3xl overflow-hidden border border-[#EFECE6] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div>
-                  <div className="relative h-44 w-full bg-neutral-100">
+                  <div className="relative h-44 xl:h-52 2xl:h-56 w-full bg-neutral-100">
                     <Image
                       src={item.image}
                       alt={item.name}
                       fill
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 25vw, 20vw"
                       className="object-cover"
                     />
                     {item.isPopular && (
-                      <span className="absolute top-3 right-3 bg-[#A3432B] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                      <span className="absolute top-3 right-3 bg-[#A3432B] text-white text-[10px] xl:text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-xs">
                         Favorit
                       </span>
                     )}
                   </div>
-                  <div className="p-5 space-y-2">
-                    <span className="text-[10px] font-bold text-[#8E3B24] uppercase tracking-wider block">{item.category}</span>
-                    <h3 className="font-bold text-sm text-[#2C2623]">{item.name}</h3>
-                    <p className="text-xs text-[#6C6663] leading-relaxed line-clamp-2">{item.description}</p>
+                  <div className="p-5 xl:p-6 space-y-2">
+                    <span className="text-[10px] xl:text-xs font-bold text-[#8E3B24] uppercase tracking-wider block">
+                      {item.category}
+                    </span>
+                    <h3 className="font-bold text-sm xl:text-base text-[#2C2623]">{item.name}</h3>
+                    <p className="text-xs xl:text-sm text-[#6C6663] leading-relaxed line-clamp-2">
+                      {item.description}
+                    </p>
                   </div>
                 </div>
 
-                <div className="p-5 pt-0 flex items-center justify-between">
-                  <span className="text-sm font-black text-[#2C2623]">Rp {item.price.toLocaleString('id-ID')}</span>
+                <div className="p-5 xl:p-6 pt-0 flex items-center justify-between">
+                  <span className="text-sm xl:text-base font-black text-[#2C2623]">
+                    Rp {item.price.toLocaleString('id-ID')}
+                  </span>
                   <button
                     onClick={() => addToCart(item.id, item.name, item.price)}
-                    className="bg-[#4E6148] hover:bg-[#3D4D38] text-white px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95"
+                    className="bg-[#4E6148] hover:bg-[#3D4D38] text-white px-4 xl:px-5 py-2 xl:py-2.5 rounded-full text-xs xl:text-sm font-bold transition-all active:scale-95 cursor-pointer"
                   >
                     + Tambah
                   </button>
@@ -176,24 +186,24 @@ export default function LandingPage() {
       </section>
 
       {/* LOKASI RESTO */}
-      <section id="locations" className="max-w-7xl mx-auto w-full px-6 py-16 border-t border-[#ECE7E1] scroll-mt-10">
-        <h2 className="text-2xl font-black text-[#2C2623] mb-6">Outlet & Lokasi</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 bg-white rounded-3xl border border-[#EFECE6] shadow-sm">
-            <span className="text-[10px] font-black uppercase text-[#4E6148] tracking-wider">Outlet</span>
-            <h3 className="font-bold text-lg text-[#8E3B24] mt-1">North Purwokerto  </h3>
-            <p className="text-xs text-[#6C6663] mt-2 leading-relaxed">
-               Sumampir, Jl. Riyanto, Purwokerto Utara, Banyumas, Jawa Tengah. (Tersedia Dine-in & Parkir Luas).
+      <section id="locations" className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 xl:px-10 py-16 border-t border-[#ECE7E1] scroll-mt-10">
+        <h2 className="text-2xl sm:text-3xl xl:text-4xl font-black text-[#2C2623] mb-6">Outlet & Lokasi</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
+          <div className="p-6 xl:p-8 bg-white rounded-3xl border border-[#EFECE6] shadow-xs">
+            <span className="text-[10px] xl:text-xs font-black uppercase text-[#4E6148] tracking-wider">Outlet</span>
+            <h3 className="font-bold text-lg xl:text-xl text-[#8E3B24] mt-1">North Purwokerto</h3>
+            <p className="text-xs xl:text-sm text-[#6C6663] mt-2 leading-relaxed">
+              Sumampir, Jl. Riyanto, Purwokerto Utara, Banyumas, Jawa Tengah. (Tersedia Dine-in & Parkir Luas).
             </p>
           </div>
         </div>
       </section>
 
       {/* TENTANG KAMI */}
-      <section id="about" className="bg-[#ECE7DF] py-16 px-6 scroll-mt-10">
-        <div className="max-w-3xl mx-auto text-center space-y-3">
-          <h2 className="text-2xl font-black text-[#2C2623]">Filosofi WaroengMakan123</h2>
-          <p className="text-xs sm:text-sm text-[#615B57] leading-relaxed">
+      <section id="about" className="bg-[#ECE7DF] py-16 xl:py-20 px-6 scroll-mt-10">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <h2 className="text-2xl sm:text-3xl xl:text-4xl font-black text-[#2C2623]">Filosofi WaroengMakan123</h2>
+          <p className="text-xs sm:text-sm xl:text-base text-[#615B57] leading-relaxed">
             Menjembatani kehangatan resep rumahan Nusantara dengan efisiensi dan higienitas modern. Setiap hidangan diracik tanpa pengawet sintetis berlebih menggunakan bahan segar langsung dari petani lokal.
           </p>
         </div>
@@ -202,19 +212,19 @@ export default function LandingPage() {
       <Footer />
       <ChatbotButton />
 
-      {/* DRAWER KERANJANG */}
+      {/* DRAWER KERANJANG RESPONSIVE */}
       {isCartOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex justify-end">
-          <div className="w-full max-w-md bg-white h-full p-6 flex flex-col justify-between shadow-2xl overflow-y-auto">
+          <div className="w-full max-w-md xl:max-w-lg bg-white h-full p-6 xl:p-8 flex flex-col justify-between shadow-2xl overflow-y-auto">
             <div className="space-y-6">
               <div className="flex justify-between items-center border-b pb-4">
                 <div>
-                  <h3 className="font-black text-lg text-[#2C2623]">Keranjang Belanja</h3>
-                  <span className="text-[11px] text-gray-500">{totalCount} item dalam pesanan</span>
+                  <h3 className="font-black text-lg xl:text-xl text-[#2C2623]">Keranjang Belanja</h3>
+                  <span className="text-[11px] xl:text-xs text-gray-500">{totalCount} item dalam pesanan</span>
                 </div>
                 <button
                   onClick={() => setIsCartOpen(false)}
-                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 hover:bg-gray-200"
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 hover:bg-gray-200 cursor-pointer"
                 >
                   ✕
                 </button>
@@ -222,30 +232,30 @@ export default function LandingPage() {
 
               {cart.length === 0 ? (
                 <div className="text-center py-16 space-y-2">
-                  <span className="text-3xl">🍲</span>
-                  <p className="text-xs text-[#736D69] font-medium">Keranjang masih kosong.</p>
+                  <span className="text-3xl xl:text-4xl">🍲</span>
+                  <p className="text-xs xl:text-sm text-[#736D69] font-medium">Keranjang masih kosong.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {cart.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between bg-[#FAF8F5] p-3 rounded-2xl border border-[#F0ECE6]">
+                    <div key={item.id} className="flex items-center justify-between bg-[#FAF8F5] p-3.5 xl:p-4 rounded-2xl border border-[#F0ECE6]">
                       <div className="pr-2">
-                        <h4 className="text-xs font-bold text-[#2C2623]">{item.name}</h4>
-                        <span className="text-[11px] font-semibold text-[#8E3B24]">
+                        <h4 className="text-xs xl:text-sm font-bold text-[#2C2623]">{item.name}</h4>
+                        <span className="text-[11px] xl:text-xs font-semibold text-[#8E3B24]">
                           Rp {(item.price * item.qty).toLocaleString('id-ID')}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => updateQty(item.id, -1)}
-                          className="w-6 h-6 bg-white rounded-full border border-gray-300 text-xs font-bold hover:bg-gray-50 flex items-center justify-center"
+                          className="w-6 h-6 xl:w-7 xl:h-7 bg-white rounded-full border border-gray-300 text-xs xl:text-sm font-bold hover:bg-gray-50 flex items-center justify-center cursor-pointer"
                         >
                           -
                         </button>
-                        <span className="text-xs font-bold min-w-4 text-center">{item.qty}</span>
+                        <span className="text-xs xl:text-sm font-bold min-w-4 text-center">{item.qty}</span>
                         <button
                           onClick={() => updateQty(item.id, 1)}
-                          className="w-6 h-6 bg-white rounded-full border border-gray-300 text-xs font-bold hover:bg-gray-50 flex items-center justify-center"
+                          className="w-6 h-6 xl:w-7 xl:h-7 bg-white rounded-full border border-gray-300 text-xs xl:text-sm font-bold hover:bg-gray-50 flex items-center justify-center cursor-pointer"
                         >
                           +
                         </button>
@@ -257,41 +267,43 @@ export default function LandingPage() {
 
               {cart.length > 0 && (
                 <div className="space-y-3 pt-4 border-t border-[#ECE7E1]">
-                  <span className="text-xs font-bold text-[#2C2623] block">Data Pemesan</span>
+                  <span className="text-xs xl:text-sm font-bold text-[#2C2623] block">Data Pemesan</span>
                   <input
                     type="text"
                     placeholder="Nama Lengkap *"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full text-xs border border-[#ECE7E1] rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#8E3B24]"
+                    className="w-full text-xs xl:text-sm border border-[#ECE7E1] rounded-xl px-3.5 py-2.5 xl:py-3 focus:outline-none focus:ring-1 focus:ring-[#8E3B24]"
                   />
                   <input
                     type="text"
                     placeholder="Nomor Meja / Alamat Pengiriman *"
                     value={customerTable}
                     onChange={(e) => setCustomerTable(e.target.value)}
-                    className="w-full text-xs border border-[#ECE7E1] rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#8E3B24]"
+                    className="w-full text-xs xl:text-sm border border-[#ECE7E1] rounded-xl px-3.5 py-2.5 xl:py-3 focus:outline-none focus:ring-1 focus:ring-[#8E3B24]"
                   />
                   <textarea
                     placeholder="Catatan tambahan (misal: sambal dipisah, tidak pakai es)"
                     value={customerNotes}
                     onChange={(e) => setCustomerNotes(e.target.value)}
                     rows={2}
-                    className="w-full text-xs border border-[#ECE7E1] rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#8E3B24]"
+                    className="w-full text-xs xl:text-sm border border-[#ECE7E1] rounded-xl px-3.5 py-2.5 xl:py-3 focus:outline-none focus:ring-1 focus:ring-[#8E3B24] resize-none"
                   />
                 </div>
               )}
             </div>
 
             <div className="pt-6 border-t border-[#ECE7E1] space-y-3 mt-6">
-              <div className="flex justify-between items-center text-sm font-bold">
+              <div className="flex justify-between items-center text-sm xl:text-base font-bold">
                 <span>Total Biaya:</span>
-                <span className="text-lg font-black text-[#8E3B24]">Rp {totalPrice.toLocaleString('id-ID')}</span>
+                <span className="text-lg xl:text-xl font-black text-[#8E3B24]">
+                  Rp {totalPrice.toLocaleString('id-ID')}
+                </span>
               </div>
               <button
                 onClick={handleWhatsAppCheckout}
                 disabled={cart.length === 0}
-                className="w-full bg-[#4E6148] hover:bg-[#3D4D38] disabled:bg-gray-300 text-white py-3.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all shadow-md active:scale-98"
+                className="w-full bg-[#4E6148] hover:bg-[#3D4D38] disabled:bg-gray-300 text-white py-3.5 xl:py-4 rounded-full text-xs xl:text-sm font-extrabold uppercase tracking-wider transition-all shadow-md active:scale-98 cursor-pointer disabled:cursor-not-allowed"
               >
                 Pesan Lewat WhatsApp 📱
               </button>
