@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { supabase } from '../../lib/supabaseClient';
 
 type POSItem = {
   id: string;
@@ -23,78 +24,47 @@ type OrderItem = {
   qty: number;
 };
 
-const POS_PRODUCTS: POSItem[] = [
-  {
-    id: 'p1',
-    name: 'Ayam Goreng Lengkuas',
-    subtitle: 'Porsi Sedang',
-    price: 25000,
-    category: 'Hewani (Goreng/Balado)',
-    image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=600&q=80',
-    isAvailable: true,
-  },
-  {
-    id: 'p2',
-    name: 'Daging Sapi Balado',
-    subtitle: 'Pedas Sedang',
-    price: 35000,
-    category: 'Hewani (Goreng/Balado)',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80',
-    isAvailable: true,
-  },
-  {
-    id: 'p3',
-    name: 'Tumis Kangkung Polos',
-    subtitle: 'Segar & Gurih',
-    price: 15000,
-    category: 'Aneka Sayur',
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80',
-    isAvailable: true,
-  },
-  {
-    id: 'p4',
-    name: 'Dimsum Ayam Udang',
-    subtitle: 'Kukus Isi 4',
-    price: 20000,
-    category: 'Dimsum & Mochi',
-    image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=600&q=80',
-    isAvailable: false,
-  },
-  {
-    id: 'p5',
-    name: 'Mochi Stroberi Dingin',
-    subtitle: 'Isi 2 (Penawar Pedas)',
-    price: 12000,
-    category: 'Dimsum & Mochi',
-    image: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?auto=format&fit=crop&w=600&q=80',
-    isAvailable: true,
-  },
-];
-
 const CATEGORIES = ['Semua', 'Hewani (Goreng/Balado)', 'Aneka Sayur', 'Dimsum & Mochi', 'Paket Kombo'];
 
 export default function KasirPage() {
+  const [products, setProducts] = useState<POSItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [orderType, setOrderType] = useState<'Dine In' | 'Takeaway'>('Dine In');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<'QRIS' | 'Tunai' | 'Debit/Kartu'>('Tunai');
+  const [orders, setOrders] = useState<OrderItem[]>([]);
 
-  const [orders, setOrders] = useState<OrderItem[]>([
-    {
-      id: 'p2',
-      name: 'Daging Sapi Balado',
-      subtitle: 'Pedas Sedang',
-      price: 35000,
-      qty: 1,
-    },
-    {
-      id: 'p3',
-      name: 'Tumis Kangkung Polos',
-      subtitle: 'Segar & Gurih',
-      price: 15000,
-      qty: 2,
-    },
-  ]);
+  // 1. Fetch data menu dari Supabase saat halaman dibuka
+  useEffect(() => {
+    async function fetchMenus() {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('menus')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Gagal mengambil data menu:', error.message);
+      } else if (data) {
+        const formatted: POSItem[] = data.map((item) => ({
+          id: item.id,
+          name: item.name,
+          subtitle: item.subtitle || '',
+          price: Number(item.price),
+          category: item.category,
+          image: item.image,
+          isAvailable: item.is_available,
+        }));
+        setProducts(formatted);
+      }
+      setIsLoading(false);
+    }
+
+    fetchMenus();
+  }, []);
 
   const handleAddItem = (item: POSItem) => {
     if (!item.isAvailable) return;
@@ -116,7 +86,7 @@ export default function KasirPage() {
   };
 
   const handleAddUpsell = () => {
-    const upsellItem = POS_PRODUCTS.find((p) => p.id === 'p5');
+    const upsellItem = products.find((p) => p.name.toLowerCase().includes('mochi'));
     if (upsellItem) {
       handleAddItem(upsellItem);
     }
@@ -128,22 +98,54 @@ export default function KasirPage() {
     }
   };
 
+  // Perhitungan Keuangan
   const subtotal = useMemo(() => orders.reduce((sum, item) => sum + item.price * item.qty, 0), [orders]);
   const tax = subtotal * 0.1;
-  const discount = 0;
-  const grandTotal = subtotal + tax - discount;
+  const grandTotal = subtotal + tax;
 
   const filteredProducts = useMemo(() => {
-    return POS_PRODUCTS.filter((item) => {
+    return products.filter((item) => {
       const matchCat = selectedCategory === 'Semua' || item.category === selectedCategory;
       const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
       return matchCat && matchSearch;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [products, selectedCategory, searchQuery]);
+
+  // 2. Simpan transaksi ke Supabase
+  const handleProcessPayment = async () => {
+    if (orders.length === 0) return;
+
+    setIsSubmitting(true);
+    const newOrder = {
+      table_number: 'Meja 12',
+      order_type: orderType,
+      subtotal: subtotal,
+      tax: tax,
+      grand_total: grandTotal,
+      payment_method: selectedPayment,
+      status: 'cooking',
+      items: orders,
+    };
+
+    const { data, error } = await supabase
+      .from('orders')
+      .insert([newOrder])
+      .select();
+
+    setIsSubmitting(false);
+
+    if (error) {
+      alert('Gagal memproses transaksi: ' + error.message);
+    } else {
+      const orderId = data?.[0]?.order_number || data?.[0]?.id;
+      alert(`Transaksi Berhasil Disimpan ke Supabase!\nNo Order: #${orderId}\nTotal: Rp ${grandTotal.toLocaleString('id-ID')}`);
+      setOrders([]);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F8F6F2] flex flex-col font-sans text-[#2C2623] antialiased">
-      {/* ================= MODERN CLEAN NAVBAR ================= */}
+      {/* NAVBAR */}
       <header className="h-16 bg-white border-b border-[#E8E4DF] px-6 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
           <Link
@@ -167,7 +169,6 @@ export default function KasirPage() {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Order Type Switcher */}
           <div className="bg-[#F4EFEA] p-1 rounded-xl flex items-center text-xs font-semibold">
             <button
               onClick={() => setOrderType('Dine In')}
@@ -200,11 +201,10 @@ export default function KasirPage() {
         </div>
       </header>
 
-      {/* ================= MAIN CONTAINER ================= */}
+      {/* BODY CONTAINER */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* ================= KATALOG MENU ================= */}
+        {/* KATALOG MENU */}
         <div className="flex-1 flex flex-col overflow-y-auto p-6 space-y-6">
-          {/* Controls: Search & Categories */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               {CATEGORIES.map((cat) => (
@@ -222,7 +222,6 @@ export default function KasirPage() {
               ))}
             </div>
 
-            {/* Clean Search Input */}
             <div className="relative w-full sm:w-64">
               <svg className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -237,84 +236,87 @@ export default function KasirPage() {
             </div>
           </div>
 
-          {/* Cards Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredProducts.map((item) => {
-              const orderEntry = orders.find((o) => o.id === item.id);
-              const isSelected = !!orderEntry;
+          {isLoading ? (
+            <div className="flex-1 flex items-center justify-center py-24 text-[#736D69] text-xs font-medium">
+              Memuat data menu dari Supabase...
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredProducts.map((item) => {
+                const orderEntry = orders.find((o) => o.id === item.id);
+                const isSelected = !!orderEntry;
 
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => handleAddItem(item)}
-                  className={`relative group bg-white rounded-2xl overflow-hidden border transition-all flex flex-col justify-between ${
-                    !item.isAvailable
-                      ? 'opacity-50 cursor-not-allowed border-transparent'
-                      : isSelected
-                      ? 'border-[#4E6148] shadow-sm ring-1 ring-[#4E6148]'
-                      : 'border-[#EAE5DE] hover:border-[#D5CDC2] hover:shadow-sm cursor-pointer'
-                  }`}
-                >
-                  <div className="relative h-32 w-full bg-[#EFE9DF]">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      sizes="(max-width: 768px) 50vw, 25vw"
-                      className="object-cover group-hover:scale-102 transition-transform duration-300"
-                    />
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleAddItem(item)}
+                    className={`relative group bg-white rounded-2xl overflow-hidden border transition-all flex flex-col justify-between ${
+                      !item.isAvailable
+                        ? 'opacity-50 cursor-not-allowed border-transparent'
+                        : isSelected
+                        ? 'border-[#4E6148] shadow-sm ring-1 ring-[#4E6148]'
+                        : 'border-[#EAE5DE] hover:border-[#D5CDC2] hover:shadow-sm cursor-pointer'
+                    }`}
+                  >
+                    <div className="relative h-32 w-full bg-[#EFE9DF]">
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        className="object-cover group-hover:scale-102 transition-transform duration-300"
+                      />
 
-                    {/* Simple Clean Badges */}
-                    <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between">
-                      {item.tag ? (
-                        <span className="text-[9px] font-bold tracking-wider bg-white/95 text-[#4E6148] px-2 py-0.5 rounded-md shadow-xs backdrop-blur-xs">
-                          {item.tag}
+                      <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between">
+                        {item.tag ? (
+                          <span className="text-[9px] font-bold tracking-wider bg-white/95 text-[#4E6148] px-2 py-0.5 rounded-md shadow-xs backdrop-blur-xs">
+                            {item.tag}
+                          </span>
+                        ) : <span />}
+
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs backdrop-blur-xs ${
+                            item.isAvailable
+                              ? 'bg-white/95 text-[#4E6148]'
+                              : 'bg-red-600/90 text-white'
+                          }`}
+                        >
+                          {item.isAvailable ? 'Tersedia' : 'Habis'}
                         </span>
-                      ) : <span />}
-
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs backdrop-blur-xs ${
-                          item.isAvailable
-                            ? 'bg-white/95 text-[#4E6148]'
-                            : 'bg-red-600/90 text-white'
-                        }`}
-                      >
-                        {item.isAvailable ? 'Tersedia' : 'Habis'}
-                      </span>
-                    </div>
-
-                    {isSelected && (
-                      <div className="absolute bottom-2 right-2 bg-[#4E6148] text-white text-[11px] font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-md">
-                        {orderEntry.qty}
                       </div>
-                    )}
-                  </div>
 
-                  <div className="p-3.5 space-y-1">
-                    <h4 className="text-xs font-bold text-[#2C2623] leading-snug line-clamp-1">
-                      {item.name}
-                    </h4>
-                    <p className="text-[10px] text-[#736D69] font-medium">{item.subtitle}</p>
+                      {isSelected && (
+                        <div className="absolute bottom-2 right-2 bg-[#4E6148] text-white text-[11px] font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-md">
+                          {orderEntry.qty}
+                        </div>
+                      )}
+                    </div>
 
-                    <div className="pt-2 flex items-center justify-between">
-                      <span className="text-xs font-bold text-[#8E3B24]">
-                        Rp {item.price.toLocaleString('id-ID')}
-                      </span>
-                      <span className="text-[11px] text-[#4E6148] font-bold group-hover:translate-x-0.5 transition-transform">
-                        + Tambah
-                      </span>
+                    <div className="p-3.5 space-y-1">
+                      <h4 className="text-xs font-bold text-[#2C2623] leading-snug line-clamp-1">
+                        {item.name}
+                      </h4>
+                      <p className="text-[10px] text-[#736D69] font-medium">{item.subtitle}</p>
+
+                      <div className="pt-2 flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#8E3B24]">
+                          Rp {item.price.toLocaleString('id-ID')}
+                        </span>
+                        <span className="text-[11px] text-[#4E6148] font-bold group-hover:translate-x-0.5 transition-transform">
+                          + Tambah
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* ================= ORDER SUMMARY / BILLING PANEL ================= */}
+        {/* SIDEBAR ORDER / PEMBAYARAN */}
         <div className="w-full lg:w-[380px] bg-white flex flex-col justify-between p-6 shrink-0 border-t lg:border-t-0 lg:border-l border-[#E8E4DF] shadow-xs">
           <div className="space-y-5">
-            {/* Header Meja */}
             <div className="flex items-center justify-between pb-4 border-b border-[#EFEBE5]">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#FAF8F5] border border-[#E5DEC9] flex items-center justify-center font-black text-sm text-[#8E3B24]">
@@ -329,13 +331,11 @@ export default function KasirPage() {
               <button
                 onClick={clearOrders}
                 className="text-xs font-semibold text-[#8C857E] hover:text-red-600 transition-colors cursor-pointer"
-                title="Kosongkan Pesanan"
               >
                 Reset
               </button>
             </div>
 
-            {/* Order Items List */}
             <div className="space-y-3.5 max-h-[220px] overflow-y-auto pr-1">
               {orders.length === 0 ? (
                 <div className="py-10 text-center">
@@ -372,7 +372,7 @@ export default function KasirPage() {
               )}
             </div>
 
-            {/* Menu Pelengkap (Clean Replacement for AI Upsell) */}
+            {/* Rekomendasi Menu Pendamping */}
             <div className="bg-[#FAF8F5] border border-[#EAE5DE] p-3 rounded-2xl flex items-center justify-between gap-3">
               <div>
                 <span className="text-[10px] font-bold text-[#4E6148] tracking-wider uppercase block">
@@ -381,7 +381,7 @@ export default function KasirPage() {
                 <p className="text-xs text-[#2C2623] font-semibold mt-0.5">
                   Mochi Stroberi Dingin
                 </p>
-                <p className="text-[10px] text-[#736D69]">Pilihan segar penawar pedas balado</p>
+                <p className="text-[10px] text-[#736D69]">Dessert manis penawar pedas balado</p>
               </div>
 
               <button
@@ -392,7 +392,6 @@ export default function KasirPage() {
               </button>
             </div>
 
-            {/* Rincian Finansial */}
             <div className="space-y-1.5 pt-2 text-xs border-t border-[#EFEBE5] text-[#736D69]">
               <div className="flex justify-between">
                 <span>Subtotal</span>
@@ -404,7 +403,6 @@ export default function KasirPage() {
               </div>
             </div>
 
-            {/* Grand Total */}
             <div className="pt-2 border-t border-dashed border-[#DDD5C5] flex items-baseline justify-between">
               <span className="text-xs font-bold text-[#2C2623]">Total Pembayaran</span>
               <span className="text-xl font-black text-[#8E3B24]">
@@ -412,7 +410,6 @@ export default function KasirPage() {
               </span>
             </div>
 
-            {/* Metode Pembayaran */}
             <div className="grid grid-cols-3 gap-2">
               {(['QRIS', 'Tunai', 'Debit/Kartu'] as const).map((method) => {
                 const isActive = selectedPayment === method;
@@ -434,13 +431,12 @@ export default function KasirPage() {
             </div>
           </div>
 
-          {/* Action Button */}
           <button
-            disabled={orders.length === 0}
-            onClick={() => alert(`Transaksi berhasil dicetak! Metode: ${selectedPayment}, Nominal: Rp ${grandTotal.toLocaleString('id-ID')}`)}
+            disabled={orders.length === 0 || isSubmitting}
+            onClick={handleProcessPayment}
             className="w-full mt-5 bg-[#8E3B24] hover:bg-[#78301B] disabled:bg-[#DDD5C5] text-white py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm active:scale-98 cursor-pointer disabled:cursor-not-allowed"
           >
-            Proses Transaksi & Cetak
+            {isSubmitting ? 'Menyimpan ke Supabase...' : 'Proses Transaksi & Cetak'}
           </button>
         </div>
       </div>
