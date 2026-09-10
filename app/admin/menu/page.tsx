@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabaseClient'; // Sesuaikan dengan lokasi file client supabase kamu
 
 type MenuItemAdmin = {
   id: string;
@@ -14,68 +15,11 @@ type MenuItemAdmin = {
   isPopular?: boolean;
 };
 
-const INITIAL_MENU: MenuItemAdmin[] = [
-  {
-    id: 'm1',
-    name: 'Nasi Rendang Sapi Premium',
-    category: 'Makanan Utama',
-    price: 32000,
-    description: 'Daging sapi pilihan dimasak rempah khas Padang selama 8 jam.',
-    image: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?auto=format&fit=crop&w=800&q=80',
-    isAvailable: true,
-    isPopular: true,
-  },
-  {
-    id: 'm2',
-    name: 'Ayam Balado Sambal Merah',
-    category: 'Makanan Utama',
-    price: 26000,
-    description: 'Ayam goreng empuk dilumuri sambal balado pedas gurih.',
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80',
-    isAvailable: true,
-  },
-  {
-    id: 'm3',
-    name: 'Nasi Ayam Geprek Sambal Ijo',
-    category: 'Makanan Utama',
-    price: 22000,
-    description: 'Ayam krispi gurih dengan ulekan sambal ijo super pedas.',
-    image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80',
-    isAvailable: true,
-    isPopular: true,
-  },
-  {
-    id: 'm4',
-    name: 'Es Kopi Susu Gula Aren',
-    category: 'Minuman',
-    price: 18000,
-    description: 'Espresso robusta dengan susu segar dan gula aren asli.',
-    image: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=800&q=80',
-    isAvailable: true,
-    isPopular: true,
-  },
-  {
-    id: 'm5',
-    name: 'Es Jeruk Peras Segar',
-    category: 'Minuman',
-    price: 10000,
-    description: 'Perasan jeruk segar alami penyegar tenggorokan.',
-    image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=800&q=80',
-    isAvailable: true,
-  },
-  {
-    id: 'm6',
-    name: 'Pisang Goreng Keju Cokelat',
-    category: 'Cemilan',
-    price: 16000,
-    description: 'Pisang raja renyah ditaburi keju parut dan meises cokelat.',
-    image: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?auto=format&fit=crop&w=800&q=80',
-    isAvailable: false,
-  },
-];
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
 
 export default function MenuManagerPage() {
-  const [menuList, setMenuList] = useState<MenuItemAdmin[]>(INITIAL_MENU);
+  const [menuList, setMenuList] = useState<MenuItemAdmin[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
 
@@ -94,6 +38,37 @@ export default function MenuManagerPage() {
     isAvailable: true,
   });
 
+  // 1. FETCH DATA DARI SUPABASE
+  const fetchMenu = async () => {
+    setIsLoading(true);
+    const { data, error } = await supabase
+      .from('menu_items')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Gagal mengambil data dari Supabase:', error.message);
+    } else if (data) {
+      // Mapping dari kolom Supabase (snake_case) ke format Frontend (camelCase)
+      const formattedData: MenuItemAdmin[] = data.map((item) => ({
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        price: Number(item.price),
+        description: item.description || '',
+        image: item.image || DEFAULT_IMAGE,
+        isAvailable: item.is_available ?? true,
+        isPopular: item.is_popular ?? false,
+      }));
+      setMenuList(formattedData);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchMenu();
+  }, []);
+
   // Reset & Open Modal Create
   const handleOpenCreateModal = () => {
     setEditingItem(null);
@@ -102,7 +77,7 @@ export default function MenuManagerPage() {
       category: 'Makanan Utama',
       price: '',
       description: '',
-      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80',
+      image: '',
       isPopular: false,
       isAvailable: true,
     });
@@ -124,59 +99,90 @@ export default function MenuManagerPage() {
     setIsModalOpen(true);
   };
 
-  // Toggle Availability
-  const handleToggleStatus = (id: string) => {
-    setMenuList((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, isAvailable: !item.isAvailable } : item
-      )
-    );
-  };
-
-  // Delete Item
-  const handleDelete = (id: string, name: string) => {
-    if (confirm(`Apakah Anda yakin ingin menghapus "${name}"?`)) {
-      setMenuList((prev) => prev.filter((item) => item.id !== id));
+  // Upload Gambar dari File Lokal (Base64)
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({ ...prev, image: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  // Save Form (Create/Update)
-  const handleSubmitForm = (e: React.FormEvent) => {
+  // 2. TOGGLE STATUS STOK DI SUPABASE
+  const handleToggleStatus = async (id: string, currentStatus: boolean) => {
+    // Optimistic Update tampilan
+    setMenuList((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, isAvailable: !currentStatus } : item))
+    );
+
+    const { error } = await supabase
+      .from('menu_items')
+      .update({ is_available: !currentStatus })
+      .eq('id', id);
+
+    if (error) {
+      alert('Gagal memperbarui status: ' + error.message);
+      fetchMenu(); // Revert data jika gagal
+    }
+  };
+
+  // 3. HAPUS MENU DARI SUPABASE
+  const handleDelete = async (id: string, name: string) => {
+    if (confirm(`Apakah Anda yakin ingin menghapus "${name}"?`)) {
+      const { error } = await supabase.from('menu_items').delete().eq('id', id);
+
+      if (error) {
+        alert('Gagal menghapus menu: ' + error.message);
+      } else {
+        fetchMenu();
+      }
+    }
+  };
+
+  // 4. SIMPAN FORM (CREATE / UPDATE) KE SUPABASE
+  const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     const priceNum = Number(formData.price) || 0;
+    const finalImage = formData.image.trim() !== '' ? formData.image : DEFAULT_IMAGE;
+
+    const payload = {
+      name: formData.name,
+      category: formData.category,
+      price: priceNum,
+      description: formData.description,
+      image: finalImage,
+      is_popular: formData.isPopular,
+      is_available: formData.isAvailable,
+    };
 
     if (editingItem) {
-      setMenuList((prev) =>
-        prev.map((item) =>
-          item.id === editingItem.id
-            ? {
-                ...item,
-                name: formData.name,
-                category: formData.category,
-                price: priceNum,
-                description: formData.description,
-                image: formData.image || item.image,
-                isPopular: formData.isPopular,
-                isAvailable: formData.isAvailable,
-              }
-            : item
-        )
-      );
+      // UPDATE
+      const { error } = await supabase
+        .from('menu_items')
+        .update(payload)
+        .eq('id', editingItem.id);
+
+      if (error) {
+        alert('Gagal mengedit menu: ' + error.message);
+        return;
+      }
     } else {
-      const newItem: MenuItemAdmin = {
-        id: `m-${Date.now()}`,
-        name: formData.name,
-        category: formData.category,
-        price: priceNum,
-        description: formData.description,
-        image: formData.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80',
-        isPopular: formData.isPopular,
-        isAvailable: formData.isAvailable,
-      };
-      setMenuList((prev) => [newItem, ...prev]);
+      // INSERT (Tambah Menu Baru)
+      const { error } = await supabase
+        .from('menu_items')
+        .insert([payload]);
+
+      if (error) {
+        alert('Gagal menambah menu: ' + error.message);
+        return;
+      }
     }
 
     setIsModalOpen(false);
+    fetchMenu(); // Re-fetch data terbaru dari Supabase
   };
 
   // Filter Search & Category
@@ -198,7 +204,7 @@ export default function MenuManagerPage() {
             Menu Manager
           </h1>
           <p className="text-xs xl:text-sm 2xl:text-base text-[#736D69] mt-1">
-            Daftar dan kelola seluruh item menu restoran Anda.
+            Daftar dan kelola seluruh item menu restoran Anda secara real-time.
           </p>
         </div>
         <button
@@ -277,7 +283,13 @@ export default function MenuManagerPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5DEC9]">
-              {filteredMenu.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-[#736D69] font-medium">
+                    Memuat data menu dari Supabase...
+                  </td>
+                </tr>
+              ) : filteredMenu.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-[#736D69]">
                     Tidak ada menu yang sesuai dengan filter pencarian.
@@ -290,9 +302,10 @@ export default function MenuManagerPage() {
                       <div className="flex items-center gap-3 xl:gap-4">
                         <div className="relative w-12 h-12 xl:w-14 xl:h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-[#E5DEC9]">
                           <Image
-                            src={item.image}
+                            src={item.image || DEFAULT_IMAGE}
                             alt={item.name}
                             fill
+                            unoptimized
                             sizes="60px"
                             className="object-cover"
                           />
@@ -322,7 +335,7 @@ export default function MenuManagerPage() {
                     </td>
                     <td className="p-4 xl:p-5">
                       <button
-                        onClick={() => handleToggleStatus(item.id)}
+                        onClick={() => handleToggleStatus(item.id, item.isAvailable)}
                         className={`px-3 py-1.5 rounded-full text-[10px] xl:text-xs font-bold transition-all cursor-pointer ${
                           item.isAvailable
                             ? 'bg-[#EAEFE8] text-[#4E6148] hover:bg-emerald-200'
@@ -357,7 +370,7 @@ export default function MenuManagerPage() {
       {/* MODAL ADD / EDIT FORM */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 xl:p-8 max-w-lg xl:max-w-xl w-full space-y-4 border border-[#E5DEC9] shadow-xl">
+          <div className="bg-white rounded-3xl p-6 xl:p-8 max-w-lg xl:max-w-xl w-full space-y-4 border border-[#E5DEC9] shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b pb-3 border-[#E5DEC9]">
               <h3 className="font-bold text-lg xl:text-xl text-[#2C2623]">
                 {editingItem ? 'Edit Item Menu' : 'Tambah Menu Baru'}
@@ -406,15 +419,45 @@ export default function MenuManagerPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs xl:text-sm font-bold text-[#736D69] block mb-1">URL Gambar (Unsplash/Direct Image)</label>
-                <input
-                  type="url"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 xl:p-3 text-xs xl:text-sm focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
-                />
+              {/* INPUT GAMBAR */}
+              <div className="space-y-2">
+                <label className="text-xs xl:text-sm font-bold text-[#736D69] block">Gambar Menu</label>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-[10px] text-[#736D69] block mb-1">Upload File Foto:</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="w-full text-xs text-[#736D69] file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#8E3B24] file:text-white hover:file:bg-[#78301B] cursor-pointer"
+                    />
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] text-[#736D69] block mb-1">Atau URL Gambar:</span>
+                    <input
+                      type="url"
+                      value={formData.image.startsWith('data:') ? '' : formData.image}
+                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2 xl:p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
+                    />
+                  </div>
+                </div>
+
+                {/* PREVIEW GAMBAR */}
+                {formData.image && (
+                  <div className="mt-2 relative w-20 h-20 rounded-xl overflow-hidden border border-[#E5DEC9]">
+                    <Image
+                      src={formData.image}
+                      alt="Preview"
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                  </div>
+                )}
               </div>
 
               <div>

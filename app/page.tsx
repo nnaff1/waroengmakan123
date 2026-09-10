@@ -7,9 +7,14 @@ import Hero from './components/Hero';
 import MealMatcher from './components/MealMatcher';
 import Footer from './components/Footer';
 import ChatbotButton from './components/ChatbotButton';
-import { CartItem, MenuItem, MENU_ITEMS } from './data';
+import { CartItem, MenuItem } from './data';
+import { supabase } from '@/lib/supabaseClient'; // Sesuaikan jika nama file kamu 'supabase.ts' atau 'supabaseClient.ts'
+
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
 
 export default function LandingPage() {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isLoadingMenu, setIsLoadingMenu] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<'Semua' | 'Makanan Utama' | 'Minuman' | 'Cemilan'>('Semua');
@@ -20,7 +25,38 @@ export default function LandingPage() {
   const [customerTable, setCustomerTable] = useState('');
   const [customerNotes, setCustomerNotes] = useState('');
 
-  // Persistensi Keranjang
+  // 1. TARIK DATA MENU DARI SUPABASE
+  const fetchMenuFromSupabase = async () => {
+    setIsLoadingMenu(true);
+    const { data, error } = await supabase
+      .from('menu_items')
+      .select('*')
+      .eq('is_available', true) // Cuma tampilkan menu yang stoknya tersedia
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Gagal mengambil menu dari Supabase:', error.message);
+    } else if (data) {
+      const formattedData: MenuItem[] = data.map((item) => ({
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        price: Number(item.price),
+        description: item.description || '',
+        image: item.image || DEFAULT_IMAGE,
+        isAvailable: item.is_available ?? true,
+        isPopular: item.is_popular ?? false,
+      }));
+      setMenuItems(formattedData);
+    }
+    setIsLoadingMenu(false);
+  };
+
+  useEffect(() => {
+    fetchMenuFromSupabase();
+  }, []);
+
+  // Persistensi Keranjang Belanja
   useEffect(() => {
     const saved = localStorage.getItem('waroeng_cart');
     if (saved) {
@@ -80,13 +116,14 @@ export default function LandingPage() {
     window.open(`https://wa.me/6281234567890?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  // Filter Search & Kategori dari data Supabase
   const filteredMenu = useMemo(() => {
-    return MENU_ITEMS.filter((item) => {
+    return menuItems.filter((item) => {
       const matchesCategory = activeCategory === 'Semua' || item.category === activeCategory;
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [activeCategory, searchQuery]);
+  }, [menuItems, activeCategory, searchQuery]);
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#2C2623] font-sans antialiased flex flex-col">
@@ -95,7 +132,7 @@ export default function LandingPage() {
       <MealMatcher onAddToCart={addToCart} />
 
       {/* KATALOG MENU RESPONSIVE */}
-      <section id="menu" className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 xl:px-10 py-16 xl:py-24 scroll-mt-10">
+      <section id="menu" className="w-full max-w-[1920px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-24 py-16 xl:py-24 scroll-mt-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div>
             <h2 className="text-3xl sm:text-4xl xl:text-5xl font-extrabold text-[#2C2623] tracking-tight">
@@ -131,7 +168,11 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {filteredMenu.length === 0 ? (
+        {isLoadingMenu ? (
+          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-300">
+            <p className="text-sm xl:text-base text-gray-500 font-medium">Memuat menu lezat dari dapur...</p>
+          </div>
+        ) : filteredMenu.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-300">
             <p className="text-sm xl:text-base text-gray-500 font-medium">Menu yang dicari tidak ditemukan.</p>
           </div>
@@ -143,11 +184,12 @@ export default function LandingPage() {
                 className="bg-white rounded-3xl overflow-hidden border border-[#EFECE6] shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div>
-                  <div className="relative h-44 xl:h-52 2xl:h-56 w-full bg-neutral-100">
+                  <div className="relative h-48 xl:h-56 w-full bg-neutral-100">
                     <Image
-                      src={item.image}
+                      src={item.image || DEFAULT_IMAGE}
                       alt={item.name}
                       fill
+                      unoptimized
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 25vw, 20vw"
                       className="object-cover"
                     />
@@ -186,7 +228,7 @@ export default function LandingPage() {
       </section>
 
       {/* LOKASI RESTO */}
-      <section id="locations" className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 xl:px-10 py-16 border-t border-[#ECE7E1] scroll-mt-10">
+      <section id="locations" className="w-full max-w-[1920px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-24 py-16 border-t border-[#ECE7E1] scroll-mt-10">
         <h2 className="text-2xl sm:text-3xl xl:text-4xl font-black text-[#2C2623] mb-6">Outlet & Lokasi</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
           <div className="p-6 xl:p-8 bg-white rounded-3xl border border-[#EFECE6] shadow-xs">

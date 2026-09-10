@@ -3,17 +3,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient'; // Sesuaikan path jika lokasi lib kamu berbeda
 
-// Type data khusus mentahan dari Supabase untuk memperbaiki error TS(7006)
 type SupabaseMenuItem = {
   id: string;
   name: string;
   subtitle?: string;
+  description?: string;
   price: number | string;
   category: string;
   image: string;
   is_available: boolean;
+  is_popular?: boolean;
 };
 
 type POSItem = {
@@ -35,7 +36,8 @@ type OrderItem = {
   qty: number;
 };
 
-const CATEGORIES = ['Semua', 'Hewani (Goreng/Balado)', 'Aneka Sayur', 'Dimsum & Mochi', 'Paket Kombo'];
+const CATEGORIES = ['Semua', 'Makanan Utama', 'Minuman', 'Cemilan', 'Hewani (Goreng/Balado)', 'Aneka Sayur', 'Dimsum & Mochi', 'Paket Kombo'];
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
 
 export default function KasirPage() {
   const [products, setProducts] = useState<POSItem[]>([]);
@@ -48,27 +50,27 @@ export default function KasirPage() {
   const [selectedPayment, setSelectedPayment] = useState<'QRIS' | 'Tunai' | 'Debit/Kartu'>('Tunai');
   const [orders, setOrders] = useState<OrderItem[]>([]);
 
-  // 1. Fetch data menu dari Supabase saat halaman dibuka
+  // 1. Fetch data menu dari Supabase (Tabel: menu_items)
   useEffect(() => {
     async function fetchMenus() {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from('menus')
+        .from('menu_items') // DISESUAIKAN: Menggunakan tabel 'menu_items'
         .select('*')
         .order('name', { ascending: true });
 
       if (error) {
         console.error('Gagal mengambil data menu:', error.message);
       } else if (data) {
-        // PERBAIKAN TS(7006): Type assertion (data as SupabaseMenuItem[])
         const formatted: POSItem[] = (data as SupabaseMenuItem[]).map((item) => ({
           id: item.id,
           name: item.name,
-          subtitle: item.subtitle || '',
+          subtitle: item.subtitle || item.description || '',
+          tag: item.is_popular ? 'Favorit' : undefined,
           price: Number(item.price),
           category: item.category,
-          image: item.image,
-          isAvailable: item.is_available,
+          image: item.image || DEFAULT_IMAGE,
+          isAvailable: item.is_available ?? true,
         }));
         setProducts(formatted);
       }
@@ -98,7 +100,7 @@ export default function KasirPage() {
   };
 
   const handleAddUpsell = () => {
-    const upsellItem = products.find((p) => p.name.toLowerCase().includes('mochi'));
+    const upsellItem = products.find((p) => p.name.toLowerCase().includes('mochi') || p.category.toLowerCase().includes('cemilan'));
     if (upsellItem) {
       handleAddItem(upsellItem);
     }
@@ -135,7 +137,7 @@ export default function KasirPage() {
       tax: tax,
       grand_total: grandTotal,
       payment_method: selectedPayment,
-      status: 'cooking',
+      status: 'Selesai',
       items: orders,
     };
 
@@ -149,8 +151,8 @@ export default function KasirPage() {
     if (error) {
       alert('Gagal memproses transaksi: ' + error.message);
     } else {
-      const orderId = data?.[0]?.order_number || data?.[0]?.id;
-      alert(`Transaksi Berhasil Disimpan ke Supabase!\nNo Order: #${orderId}\nTotal: Rp ${grandTotal.toLocaleString('id-ID')}`);
+      const orderId = data?.[0]?.id || 'SUCCESS';
+      alert(`Transaksi Berhasil Disimpan ke Supabase!\nID Order: #${orderId}\nTotal: Rp ${grandTotal.toLocaleString('id-ID')}`);
       setOrders([]);
     }
   };
@@ -255,7 +257,6 @@ export default function KasirPage() {
               Memuat data menu dari Supabase...
             </div>
           ) : (
-            /* Responsive Grid Sizing */
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5 xl:gap-6">
               {filteredProducts.map((item) => {
                 const orderEntry = orders.find((o) => o.id === item.id);
@@ -275,9 +276,10 @@ export default function KasirPage() {
                   >
                     <div className="relative h-32 xl:h-40 2xl:h-44 w-full bg-[#EFE9DF]">
                       <Image
-                        src={item.image}
+                        src={item.image || DEFAULT_IMAGE}
                         alt={item.name}
                         fill
+                        unoptimized
                         sizes="(max-width: 768px) 50vw, (max-width: 1536px) 25vw, 20vw"
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
@@ -311,7 +313,7 @@ export default function KasirPage() {
                       <h4 className="text-xs xl:text-sm font-bold text-[#2C2623] leading-snug line-clamp-1">
                         {item.name}
                       </h4>
-                      <p className="text-[10px] xl:text-xs text-[#736D69] font-medium">{item.subtitle}</p>
+                      <p className="text-[10px] xl:text-xs text-[#736D69] font-medium line-clamp-1">{item.subtitle}</p>
 
                       <div className="pt-2 flex items-center justify-between">
                         <span className="text-xs xl:text-sm font-bold text-[#8E3B24]">
@@ -362,7 +364,7 @@ export default function KasirPage() {
                   <div key={item.id} className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <h4 className="text-xs xl:text-sm font-bold text-[#2C2623] truncate">{item.name}</h4>
-                      <p className="text-[10px] xl:text-xs text-[#736D69]">{item.subtitle}</p>
+                      <p className="text-[10px] xl:text-xs text-[#736D69] truncate">{item.subtitle}</p>
                       <span className="text-xs xl:text-sm font-semibold text-[#8E3B24]">
                         Rp {(item.price * item.qty).toLocaleString('id-ID')}
                       </span>
@@ -395,7 +397,7 @@ export default function KasirPage() {
                   Saran Menu Pendamping
                 </span>
                 <p className="text-xs xl:text-sm text-[#2C2623] font-semibold mt-0.5">
-                  Mochi Stroberi Dingin
+                  Mochi Stroberi / Minuman Segar
                 </p>
                 <p className="text-[10px] xl:text-xs text-[#736D69]">Dessert manis penawar pedas balado</p>
               </div>
@@ -404,7 +406,7 @@ export default function KasirPage() {
                 onClick={handleAddUpsell}
                 className="bg-white border border-[#D5CDC2] hover:border-[#4E6148] hover:text-[#4E6148] text-[#2C2623] text-xs xl:text-sm font-bold px-3 py-1.5 rounded-xl transition-all shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap"
               >
-                + Rp 12k
+                + Tambah
               </button>
             </div>
 
@@ -460,4 +462,4 @@ export default function KasirPage() {
       </div>
     </div>
   );
-} 
+}
