@@ -1,285 +1,367 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabaseClient'; // Sesuaikan path jika lokasi lib kamu berbeda
 
-export default function AdminDashboardPage() {
-  const [timeRange, setTimeRange] = useState<'hari' | '7hari' | 'bulan'>('hari');
+type OrderItem = {
+  id: string;
+  name: string;
+  price: number;
+  qty: number;
+};
+
+type Order = {
+  id: string;
+  order_type: 'Dine In' | 'Takeaway';
+  grand_total: number;
+  subtotal: number;
+  tax: number;
+  created_at: string;
+  items: OrderItem[];
+};
+
+type MenuItem = {
+  id: string;
+  name: string;
+  price: number;
+  is_available: boolean;
+  image: string;
+};
+
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+
+export default function DashboardPage() {
+  const [timeRange, setTimeRange] = useState<'today' | '7days' | 'month'>('today');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 1. Fetch data pesanan dan menu dari Supabase
+ const fetchDashboardData = async () => {
+  setIsLoading(true);
+  try {
+    // 1. Fetch Orders dari Supabase
+    const { data: ordersData, error: ordersErr } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (ordersErr) {
+      console.error('Error orders:', ordersErr.message);
+    } else if (ordersData) {
+      const formattedOrders: Order[] = ordersData.map((o) => ({
+        id: o.id,
+        order_type: o.order_type || 'Dine In',
+        grand_total: Number(o.grand_total || 0),
+        subtotal: Number(o.subtotal || 0),
+        tax: Number(o.tax || 0),
+        created_at: o.created_at,
+        items: Array.isArray(o.items) ? o.items : [],
+      }));
+      setOrders(formattedOrders);
+    }
+
+    // 2. Fetch Menu Items dari Supabase
+    const { data: menuData, error: menuErr } = await supabase
+      .from('menu_items')
+      .select('*');
+
+    if (menuErr) {
+      console.error('Error menu:', menuErr.message);
+    } else if (menuData) {
+      setMenuItems(
+        menuData.map((m) => ({
+          id: m.id,
+          name: m.name,
+          price: Number(m.price),
+          is_available: m.is_available,
+          image: m.image || DEFAULT_IMAGE,
+        }))
+      );
+    }
+  } catch (err) {
+    console.error('Crash fetching dashboard:', err);
+  } finally {
+    setIsLoading(false); // Apapun yang terjadi, indikator loading PASTI mati
+  }
+};
+  // 2. Filter pesanan berdasarkan rentang waktu yang dipilih
+  const filteredOrders = useMemo(() => {
+    const now = new Date();
+    return orders.filter((order) => {
+      const orderDate = new Date(order.created_at);
+      if (timeRange === 'today') {
+        return orderDate.toDateString() === now.toDateString();
+      } else if (timeRange === '7days') {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(now.getDate() - 7);
+        return orderDate >= sevenDaysAgo;
+      } else if (timeRange === 'month') {
+        return (
+          orderDate.getMonth() === now.getMonth() &&
+          orderDate.getFullYear() === now.getFullYear()
+        );
+      }
+      return true;
+    });
+  }, [orders, timeRange]);
+
+  // 3. Kalkulasi metrik keuangan
+  const totalRevenue = useMemo(
+    () => filteredOrders.reduce((sum, o) => sum + o.grand_total, 0),
+    [filteredOrders]
+  );
+  const totalOrdersCount = filteredOrders.length;
+  const avgOrderValue = totalOrdersCount > 0 ? totalRevenue / totalOrdersCount : 0;
+
+  // 4. Aggregasi menu terlaris
+  const topSellers = useMemo(() => {
+    const itemMap: Record<string, { id: string; name: string; qty: number; revenue: number }> = {};
+
+    filteredOrders.forEach((order) => {
+      order.items.forEach((item) => {
+        if (!itemMap[item.name]) {
+          itemMap[item.name] = { id: item.id, name: item.name, qty: 0, revenue: 0 };
+        }
+        itemMap[item.name].qty += item.qty || 1;
+        itemMap[item.name].revenue += (item.price || 0) * (item.qty || 1);
+      });
+    });
+
+    return Object.values(itemMap).sort((a, b) => b.qty - a.qty);
+  }, [filteredOrders]);
+
+  const bestSellerToday = topSellers[0];
+
+  // 5. Filter stok kosong / habis
+  const outOfStockItems = useMemo(
+    () => menuItems.filter((item) => !item.is_available),
+    [menuItems]
+  );
+
+  // 6. Hitung rasio Dine-In vs Takeaway
+  const orderTypeCounts = useMemo(() => {
+    const counts = { dineIn: 0, takeaway: 0 };
+    filteredOrders.forEach((o) => {
+      if (o.order_type === 'Takeaway') counts.takeaway++;
+      else counts.dineIn++;
+    });
+    return counts;
+  }, [filteredOrders]);
+
+  if (isLoading) {
+    return (
+      <div className="w-full py-20 text-center text-[#736D69] text-sm font-semibold">
+        Memuat data transaksi dan performa restoran...
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full max-w-[1800px] mx-auto space-y-6 xl:space-y-8 2xl:space-y-10 text-[#2C2623] p-2 sm:p-4 xl:p-6">
-      {/* HEADER OVERVIEW */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EBE5D8] pb-4">
+    <div className="w-full max-w-[1800px] mx-auto space-y-8 text-[#2C2623] font-sans">
+      {/* HEADER & FILTER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5DEC9] pb-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl xl:text-4xl 2xl:text-5xl font-black tracking-tight text-[#2C2623]">
+          <h1 className="text-2xl sm:text-3xl xl:text-4xl font-black tracking-tight text-[#2C2623]">
             Dashboard Overview
           </h1>
-          <p className="text-xs xl:text-sm 2xl:text-base text-[#736D69] mt-1">
-            Pantau performa restoran Anda hari ini secara real-time.
+          <p className="text-xs xl:text-sm text-[#736D69] mt-1">
+            Pantau performa restoran Anda secara real-time dari data transaksi Supabase.
           </p>
         </div>
 
-        {/* TIME FILTER BUTTONS */}
-        <div className="bg-[#EFE9DE] p-1.5 rounded-2xl inline-flex items-center gap-1 border border-[#E2DCce] self-start sm:self-auto">
-          <button
-            onClick={() => setTimeRange('hari')}
-            className={`px-3.5 xl:px-5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all cursor-pointer ${
-              timeRange === 'hari'
-                ? 'bg-white text-[#2C2623] shadow-sm font-bold'
-                : 'text-[#736D69] hover:text-[#2C2623]'
-            }`}
-          >
-            Hari Ini
-          </button>
-          <button
-            onClick={() => setTimeRange('7hari')}
-            className={`px-3.5 xl:px-5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all cursor-pointer ${
-              timeRange === '7hari'
-                ? 'bg-white text-[#2C2623] shadow-sm font-bold'
-                : 'text-[#736D69] hover:text-[#2C2623]'
-            }`}
-          >
-            7 Hari Terakhir
-          </button>
-          <button
-            onClick={() => setTimeRange('bulan')}
-            className={`px-3.5 xl:px-5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all cursor-pointer ${
-              timeRange === 'bulan'
-                ? 'bg-white text-[#2C2623] shadow-sm font-bold'
-                : 'text-[#736D69] hover:text-[#2C2623]'
-            }`}
-          >
-            Bulan Ini
-          </button>
+        {/* TIME RANGE SELECTOR */}
+        <div className="bg-white border border-[#E5DEC9] p-1 rounded-2xl flex items-center text-xs font-bold shadow-xs">
+          {(
+            [
+              { key: 'today', label: 'Hari Ini' },
+              { key: '7days', label: '7 Hari Terakhir' },
+              { key: 'month', label: 'Bulan Ini' },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setTimeRange(tab.key)}
+              className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                timeRange === tab.key
+                  ? 'bg-[#8E3B24] text-white shadow-xs'
+                  : 'text-[#736D69] hover:text-[#2C2623]'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* 4 STAT CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 xl:gap-6 2xl:gap-8">
-        {/* Total Pendapatan */}
-        <div className="bg-white rounded-3xl p-5 xl:p-7 2xl:p-8 border border-[#EBE5D8] shadow-xs flex flex-col justify-between space-y-4">
+      {/* METRIC CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Card 1: Pendapatan */}
+        <div className="bg-white p-6 rounded-3xl border border-[#EBE5D8] shadow-xs flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] xl:text-xs font-bold tracking-wider text-[#938C87] uppercase">
-              Total Pendapatan Hari Ini
+            <span className="text-[11px] font-bold text-[#736D69] uppercase tracking-wider">
+              Total Pendapatan
             </span>
-            <div className="w-8 h-8 xl:w-10 xl:h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-              <svg className="w-4 h-4 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
+            <span className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+              💰
+            </span>
           </div>
           <div>
-            <div className="text-2xl xl:text-3xl 2xl:text-4xl font-black text-[#2C2623]">
-              Rp 12.500.000
-            </div>
-            <div className="text-[11px] xl:text-xs font-semibold text-emerald-700 flex items-center gap-1 mt-1">
-              <span>↗ +12%</span>
-              <span className="text-[#938C87] font-normal">vs kemarin</span>
-            </div>
+            <h2 className="text-2xl xl:text-3xl font-black text-[#2C2623]">
+              Rp {totalRevenue.toLocaleString('id-ID')}
+            </h2>
+            <p className="text-[11px] text-[#736D69] mt-1">
+              {timeRange === 'today' ? 'Transaksi hari ini' : 'Total akumulasi'}
+            </p>
           </div>
         </div>
 
-        {/* Total Pesanan */}
-        <div className="bg-white rounded-3xl p-5 xl:p-7 2xl:p-8 border border-[#EBE5D8] shadow-xs flex flex-col justify-between space-y-4">
+        {/* Card 2: Total Pesanan */}
+        <div className="bg-white p-6 rounded-3xl border border-[#EBE5D8] shadow-xs flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] xl:text-xs font-bold tracking-wider text-[#938C87] uppercase">
+            <span className="text-[11px] font-bold text-[#736D69] uppercase tracking-wider">
               Total Pesanan
             </span>
-            <div className="w-8 h-8 xl:w-10 xl:h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
-              <svg className="w-4 h-4 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-            </div>
+            <span className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm">
+              🛍️
+            </span>
           </div>
           <div>
-            <div className="text-2xl xl:text-3xl 2xl:text-4xl font-black text-[#2C2623]">
-              145
-            </div>
-            <div className="text-[11px] xl:text-xs font-semibold text-emerald-700 flex items-center gap-1 mt-1">
-              <span>↗ +5%</span>
-              <span className="text-[#938C87] font-normal">vs kemarin</span>
-            </div>
+            <h2 className="text-2xl xl:text-3xl font-black text-[#2C2623]">
+              {totalOrdersCount} <span className="text-sm font-normal text-gray-500">transaksi</span>
+            </h2>
+            <p className="text-[11px] text-[#736D69] mt-1">
+              Dine-In: {orderTypeCounts.dineIn} | Takeaway: {orderTypeCounts.takeaway}
+            </p>
           </div>
         </div>
 
-        {/* Rata-rata Nilai Pesanan */}
-        <div className="bg-white rounded-3xl p-5 xl:p-7 2xl:p-8 border border-[#EBE5D8] shadow-xs flex flex-col justify-between space-y-4">
+        {/* Card 3: Rata-Rata Nilai Pesanan */}
+        <div className="bg-white p-6 rounded-3xl border border-[#EBE5D8] shadow-xs flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] xl:text-xs font-bold tracking-wider text-[#938C87] uppercase">
-              Rata-rata Nilai Pesanan
+            <span className="text-[11px] font-bold text-[#736D69] uppercase tracking-wider">
+              Rata-Rata / Struk
             </span>
-            <div className="w-8 h-8 xl:w-10 xl:h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
-              <svg className="w-4 h-4 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-            </div>
+            <span className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+              📊
+            </span>
           </div>
           <div>
-            <div className="text-2xl xl:text-3xl 2xl:text-4xl font-black text-[#2C2623]">
-              Rp 86.200
-            </div>
-            <div className="text-[11px] xl:text-xs font-semibold text-red-700 flex items-center gap-1 mt-1">
-              <span>↘ -2%</span>
-              <span className="text-[#938C87] font-normal">vs kemarin</span>
-            </div>
+            <h2 className="text-2xl xl:text-3xl font-black text-[#2C2623]">
+              Rp {Math.round(avgOrderValue).toLocaleString('id-ID')}
+            </h2>
+            <p className="text-[11px] text-[#736D69] mt-1">Nominal rata-rata per pelanggan</p>
           </div>
         </div>
 
-        {/* Menu Terlaris Hari Ini */}
-        <div className="bg-white rounded-3xl p-5 xl:p-7 2xl:p-8 border border-[#EBE5D8] shadow-xs flex flex-col justify-between space-y-4">
+        {/* Card 4: Menu Terlaris */}
+        <div className="bg-white p-6 rounded-3xl border border-[#EBE5D8] shadow-xs flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] xl:text-xs font-bold tracking-wider text-[#938C87] uppercase">
-              Menu Terlaris Hari Ini
+            <span className="text-[11px] font-bold text-[#736D69] uppercase tracking-wider">
+              Menu Terlaris
             </span>
-            <div className="w-8 h-8 xl:w-10 xl:h-10 rounded-xl bg-orange-50 text-orange-700 flex items-center justify-center">
-              <svg className="w-4 h-4 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
-            </div>
+            <span className="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-bold text-sm">
+              🔥
+            </span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 xl:w-12 xl:h-12 rounded-xl overflow-hidden shrink-0 border border-black/5 bg-stone-100">
-              <Image
-                src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=80"
-                alt="Ayam Goreng Balado"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm xl:text-base font-bold text-[#2C2623] truncate">Ayam Goreng Balado</p>
-              <p className="text-[11px] xl:text-xs text-[#736D69]">48 porsi terjual</p>
-            </div>
+          <div>
+            {bestSellerToday ? (
+              <>
+                <h2 className="text-lg xl:text-xl font-bold text-[#8E3B24] truncate">
+                  {bestSellerToday.name}
+                </h2>
+                <p className="text-xs text-[#736D69] font-medium mt-0.5">
+                  Terjual {bestSellerToday.qty} porsi
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-gray-400 font-medium">Belum ada transaksi</p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* SALES TREND CHART CARD */}
-      <div className="bg-white rounded-3xl p-6 xl:p-8 border border-[#EBE5D8] shadow-xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#F0ECE6] pb-4">
-          <div>
-            <h3 className="text-base xl:text-xl font-bold text-[#2C2623]">Sales Trend</h3>
-            <p className="text-xs xl:text-sm text-[#736D69] mt-0.5">Grafik volume pesanan Dine-in vs Takeaway</p>
-          </div>
-          <div className="flex items-center gap-4 text-xs xl:text-sm font-semibold">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-[#4E6148]"></span>
-              <span className="text-[#524D4A]">Dine-in</span>
+      {/* DETAIL PERFORMA MENU & ALERT STOK */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* TOP 5 MENU PALING LARIS */}
+        <div className="lg:col-span-7 bg-white p-6 sm:p-8 rounded-3xl border border-[#EBE5D8] shadow-xs space-y-6">
+          <div className="flex items-center justify-between border-b pb-4 border-[#F0ECE6]">
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-[#2C2623]">
+                Top Menu Paling Laris
+              </h3>
+              <p className="text-xs text-[#736D69]">Peringkat hidangan terfavorit pelanggan</p>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-[#8E3B24]"></span>
-              <span className="text-[#524D4A]">Takeaway</span>
-            </div>
-          </div>
-        </div>
-
-        {/* SVG Representation of Trend Lines (Sized Larger for High-Res Screens) */}
-        <div className="w-full h-64 xl:h-80 2xl:h-96 relative pt-4">
-          <svg className="w-full h-full overflow-visible" viewBox="0 0 1000 200" preserveAspectRatio="none">
-            {/* Horizontal Grid lines */}
-            <line x1="0" y1="40" x2="1000" y2="40" stroke="#F3EFE6" strokeWidth="1" />
-            <line x1="0" y1="90" x2="1000" y2="90" stroke="#F3EFE6" strokeWidth="1" />
-            <line x1="0" y1="140" x2="1000" y2="140" stroke="#F3EFE6" strokeWidth="1" />
-            <line x1="0" y1="190" x2="1000" y2="190" stroke="#F3EFE6" strokeWidth="1" />
-
-            {/* Dine-in Curve (Green) */}
-            <path
-              d="M 0 160 Q 250 60, 500 70 T 1000 50"
-              fill="none"
-              stroke="#4E6148"
-              strokeWidth="3.5"
-            />
-            {/* Takeaway Curve (Terracotta dashed) */}
-            <path
-              d="M 0 175 Q 250 120, 500 110 T 1000 120"
-              fill="none"
-              stroke="#8E3B24"
-              strokeWidth="3"
-              strokeDasharray="6 4"
-            />
-          </svg>
-
-          {/* Time markers */}
-          <div className="flex justify-between text-[10px] xl:text-xs text-[#938C87] font-semibold pt-4 border-t border-[#F0ECE6]">
-            <span>10:00</span>
-            <span>12:00</span>
-            <span>14:00</span>
-            <span>16:00</span>
-            <span>18:00</span>
-            <span>20:00</span>
-            <span>21:00</span>
-          </div>
-        </div>
-      </div>
-
-      {/* BOTTOM 2 COLUMNS: TOP 5 MENU & LOW STOCK ALERT */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xl:gap-8">
-        {/* Top 5 Menu */}
-        <div className="bg-white rounded-3xl p-6 xl:p-8 border border-[#EBE5D8] shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b pb-3 border-[#F0ECE6]">
-            <h4 className="text-sm xl:text-lg font-bold text-[#2C2623]">Top 5 Menu Paling Laris</h4>
-            <span className="text-xs xl:text-sm font-semibold text-[#8E3B24] cursor-pointer hover:underline">
-              Lihat Semua
+            <span className="text-xs font-bold text-[#4E6148] bg-[#FAF8F5] px-3 py-1 rounded-full border border-[#E5DEC9]">
+              {topSellers.length} Menu Terjual
             </span>
           </div>
 
-          <div className="space-y-3 xl:space-y-4">
-            {[
-              { name: 'Ayam Goreng Balado', sold: '48 porsi', price: 'Rp 25.000' },
-              { name: 'Dimsum Siu Mai Kukus', sold: '39 porsi', price: 'Rp 18.000' },
-              { name: 'Mochi Daifuku Strawberry', sold: '34 porsi', price: 'Rp 15.000' },
-              { name: 'Tumis Kangkung Terasi', sold: '29 porsi', price: 'Rp 12.000' },
-              { name: 'Es Jeruk Nipis Madu', sold: '25 gelas', price: 'Rp 8.000' },
-            ].map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between py-1.5 border-b border-dashed border-gray-100 last:border-none">
-                <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 xl:w-7 xl:h-7 rounded-lg bg-[#FAF8F5] text-xs xl:text-sm font-extrabold text-[#8E3B24] flex items-center justify-center">
-                    {idx + 1}
-                  </span>
-                  <div>
-                    <p className="text-xs xl:text-sm font-bold text-[#2C2623]">{item.name}</p>
-                    <p className="text-[10px] xl:text-xs text-[#736D69]">{item.sold}</p>
+          {topSellers.length === 0 ? (
+            <div className="py-12 text-center text-xs text-gray-400">
+              Belum ada data penjualan pada periode ini.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {topSellers.slice(0, 5).map((item, index) => (
+                <div
+                  key={item.name}
+                  className="flex items-center justify-between p-3.5 bg-[#FAF8F5] rounded-2xl border border-[#F0ECE6]"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-full bg-[#3A4836] text-white font-black text-xs flex items-center justify-center">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-[#2C2623]">{item.name}</h4>
+                      <p className="text-[11px] text-[#736D69]">{item.qty} porsi terjual</p>
+                    </div>
                   </div>
+                  <span className="text-xs sm:text-sm font-bold text-[#8E3B24]">
+                    Rp {item.revenue.toLocaleString('id-ID')}
+                  </span>
                 </div>
-                <span className="text-xs xl:text-sm font-bold text-[#2C2623]">{item.price}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Low Stock Alert */}
-        <div className="bg-white rounded-3xl p-6 xl:p-8 border border-[#EBE5D8] shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b pb-3 border-[#F0ECE6]">
+        {/* LOW STOCK ALERT */}
+        <div className="lg:col-span-5 bg-white p-6 sm:p-8 rounded-3xl border border-[#EBE5D8] shadow-xs space-y-6">
+          <div className="flex items-center justify-between border-b pb-4 border-[#F0ECE6]">
             <div className="flex items-center gap-2">
-              <span className="text-amber-600 text-base xl:text-lg">⚠️</span>
-              <h4 className="text-sm xl:text-lg font-bold text-[#2C2623]">Low Stock Alert</h4>
+              <span className="text-lg">⚠️</span>
+              <h3 className="text-base sm:text-lg font-bold text-[#2C2623]">Status Stok Habis</h3>
             </div>
-            <span className="bg-amber-100 text-amber-800 text-[10px] xl:text-xs font-bold px-3 py-1 rounded-full">
-              3 Bahan Kritis
+            <span className="text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-200">
+              {outOfStockItems.length} Kosong
             </span>
           </div>
 
-          <div className="space-y-3 xl:space-y-4">
-            {[
-              { name: 'Bahan Kulit Mochi (Tepung Ketan)', remaining: 'Sisa 1.2 kg', status: 'Kritis' },
-              { name: 'Strawberry Segar (Daifuku)', remaining: 'Sisa 8 pack', status: 'Menipis' },
-              { name: 'Daging Ayam Paha Fillet', remaining: 'Sisa 3.5 kg', status: 'Menipis' },
-            ].map((item, idx) => (
-              <div key={idx} className="p-3.5 xl:p-4 bg-[#FAF8F5] rounded-2xl border border-[#ECE7E1] flex items-center justify-between">
-                <div>
-                  <p className="text-xs xl:text-sm font-bold text-[#2C2623]">{item.name}</p>
-                  <p className="text-[10px] xl:text-xs text-[#736D69] mt-0.5">{item.remaining}</p>
+          {outOfStockItems.length === 0 ? (
+            <div className="py-12 text-center text-xs text-emerald-700 bg-emerald-50 rounded-2xl border border-emerald-200 font-medium">
+              ✓ Semua stok menu saat ini tersedia!
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {outOfStockItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-3.5 bg-red-50/50 rounded-2xl border border-red-100"
+                >
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-[#2C2623]">{item.name}</h4>
+                    <p className="text-[11px] text-red-600 font-semibold">Stok Tidak Tersedia</p>
+                  </div>
+                  <span className="text-xs font-bold bg-red-600 text-white px-2.5 py-1 rounded-lg">
+                    Habis
+                  </span>
                 </div>
-                <span className={`text-[10px] xl:text-xs font-bold px-3 py-1 rounded-full ${
-                  item.status === 'Kritis'
-                    ? 'bg-red-100 text-red-700 border border-red-200'
-                    : 'bg-amber-100 text-amber-700 border border-amber-200'
-                }`}>
-                  {item.status}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
