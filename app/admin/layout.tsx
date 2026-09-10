@@ -18,9 +18,6 @@ export default function AdminLayout({
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newMenu, setNewMenu] = useState({ name: '', category: 'Hewani (Goreng/Balado)', price: '' });
-
   useEffect(() => {
     const authStatus = sessionStorage.getItem('waroeng_admin_auth');
     if (authStatus === 'true') {
@@ -95,13 +92,6 @@ export default function AdminLayout({
     },
   ];
 
-  const handleCreateMenu = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert(`Menu "${newMenu.name}" berhasil ditambahkan!`);
-    setIsModalOpen(false);
-    setNewMenu({ name: '', category: 'Hewani (Goreng/Balado)', price: '' });
-  };
-
   if (isLoadingAuth) {
     return <div className="min-h-screen bg-[#F8F6F2]" />;
   }
@@ -166,13 +156,6 @@ export default function AdminLayout({
             <h1 className="text-xl font-bold text-[#8E3B24] tracking-tight">WaroengMakan123</h1>
             <p className="text-xs text-[#736D69] font-medium">Admin Console</p>
           </Link>
-
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="w-full bg-[#8E3B24] hover:bg-[#78301B] text-white py-2.5 px-4 rounded-xl text-xs font-semibold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
-          >
-            <span>+</span> New Menu Item
-          </button>
 
           <nav className="space-y-1.5 text-xs font-semibold text-[#524D4A]">
             {navItems.map((item) => {
@@ -272,76 +255,6 @@ export default function AdminLayout({
 
         <main className="p-8 flex-1 overflow-y-auto">{children}</main>
       </div>
-
-      {/* MODAL GLOBAL NEW MENU */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 border border-[#E5DEC9] shadow-xl">
-            <div className="flex items-center justify-between border-b pb-3 border-[#E5DEC9]">
-              <h3 className="font-bold text-lg text-[#2C2623]">Tambah Menu Baru</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-sm">
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateMenu} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-[#736D69] block mb-1">Nama Menu</label>
-                <input
-                  type="text"
-                  required
-                  value={newMenu.name}
-                  onChange={(e) => setNewMenu({ ...newMenu, name: e.target.value })}
-                  placeholder="e.g., Ayam Penyet Sambal Ijo"
-                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs text-[#2C2623] focus:outline-none focus:ring-1 focus:ring-[#8E3B24]"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-[#736D69] block mb-1">Kategori</label>
-                <select
-                  value={newMenu.category}
-                  onChange={(e) => setNewMenu({ ...newMenu, category: e.target.value })}
-                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs text-[#2C2623] focus:outline-none focus:ring-1 focus:ring-[#8E3B24]"
-                >
-                  <option value="Hewani (Goreng/Balado)">Hewani (Goreng/Balado)</option>
-                  <option value="Aneka Sayur">Aneka Sayur</option>
-                  <option value="Dimsum & Mochi">Dimsum & Mochi</option>
-                  <option value="Minuman">Minuman</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-[#736D69] block mb-1">Harga (Rp)</label>
-                <input
-                  type="number"
-                  required
-                  value={newMenu.price}
-                  onChange={(e) => setNewMenu({ ...newMenu, price: e.target.value })}
-                  placeholder="25000"
-                  className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 text-xs text-[#2C2623] focus:outline-none focus:ring-1 focus:ring-[#8E3B24]"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-full border border-gray-300 text-xs font-semibold hover:bg-gray-50 cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-full bg-[#8E3B24] text-white text-xs font-bold hover:bg-[#78301B] cursor-pointer"
-                >
-                  Simpan Menu
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

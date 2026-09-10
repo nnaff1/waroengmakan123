@@ -8,7 +8,7 @@ import MealMatcher from './components/MealMatcher';
 import Footer from './components/Footer';
 import ChatbotButton from './components/ChatbotButton';
 import { CartItem, MenuItem } from './data';
-import { supabase } from '@/lib/supabaseClient'; // Sesuaikan jika nama file kamu 'supabase.ts' atau 'supabaseClient.ts'
+import { supabase } from '@/lib/supabaseClient';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
 
@@ -28,28 +28,31 @@ export default function LandingPage() {
   // 1. TARIK DATA MENU DARI SUPABASE
   const fetchMenuFromSupabase = async () => {
     setIsLoadingMenu(true);
-    const { data, error } = await supabase
-      .from('menu_items')
-      .select('*')
-      .eq('is_available', true) // Cuma tampilkan menu yang stoknya tersedia
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('menu_items')
+        .select('*');
 
-    if (error) {
-      console.error('Gagal mengambil menu dari Supabase:', error.message);
-    } else if (data) {
-      const formattedData: MenuItem[] = data.map((item) => ({
-        id: item.id,
-        name: item.name,
-        category: item.category,
-        price: Number(item.price),
-        description: item.description || '',
-        image: item.image || DEFAULT_IMAGE,
-        isAvailable: item.is_available ?? true,
-        isPopular: item.is_popular ?? false,
-      }));
-      setMenuItems(formattedData);
+      if (error) {
+        console.error('Error Supabase:', error.message);
+      } else if (data) {
+        const formattedData: MenuItem[] = data.map((item) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          price: Number(item.price),
+          description: item.description || '',
+          image: item.image || DEFAULT_IMAGE,
+          isAvailable: item.is_available ?? true,
+          isPopular: item.is_popular ?? false,
+        }));
+        setMenuItems(formattedData);
+      }
+    } catch (err) {
+      console.error('Catch Error:', err);
+    } finally {
+      setIsLoadingMenu(false);
     }
-    setIsLoadingMenu(false);
   };
 
   useEffect(() => {
@@ -227,17 +230,27 @@ export default function LandingPage() {
         )}
       </section>
 
-      {/* LOKASI RESTO */}
+      {/* LOKASI RESTO (KLIK LANGSUNG KE GOOGLE MAPS) */}
       <section id="locations" className="w-full max-w-[1920px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-24 py-16 border-t border-[#ECE7E1] scroll-mt-10">
         <h2 className="text-2xl sm:text-3xl xl:text-4xl font-black text-[#2C2623] mb-6">Outlet & Lokasi</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
-          <div className="p-6 xl:p-8 bg-white rounded-3xl border border-[#EFECE6] shadow-xs">
-            <span className="text-[10px] xl:text-xs font-black uppercase text-[#4E6148] tracking-wider">Outlet</span>
-            <h3 className="font-bold text-lg xl:text-xl text-[#8E3B24] mt-1">North Purwokerto</h3>
+          <a
+            href="https://maps.app.goo.gl/xJkBM8FKNzjhCPNS8"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-6 xl:p-8 bg-white rounded-3xl border border-[#EFECE6] shadow-xs hover:shadow-md hover:border-[#8E3B24] transition-all group cursor-pointer block"
+          >
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] xl:text-xs font-black uppercase text-[#4E6148] tracking-wider">Outlet</span>
+              <span className="text-xs font-bold text-[#8E3B24] group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                Buka di Maps 📍
+              </span>
+            </div>
+            <h3 className="font-bold text-lg xl:text-xl text-[#8E3B24] mt-2 group-hover:underline">North Purwokerto</h3>
             <p className="text-xs xl:text-sm text-[#6C6663] mt-2 leading-relaxed">
               Sumampir, Jl. Riyanto, Purwokerto Utara, Banyumas, Jawa Tengah. (Tersedia Dine-in & Parkir Luas).
             </p>
-          </div>
+          </a>
         </div>
       </section>
 
