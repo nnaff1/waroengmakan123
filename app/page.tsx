@@ -25,6 +25,12 @@ export default function LandingPage() {
   const [customerTable, setCustomerTable] = useState('');
   const [customerNotes, setCustomerNotes] = useState('');
 
+// State Jam Operasional
+  const [operatingHours, setOperatingHours] = useState({
+    open: '10:00',
+    close: '21:00',
+  });
+
   // 1. TARIK DATA MENU DARI SUPABASE
   const fetchMenuFromSupabase = async () => {
     setIsLoadingMenu(true);
@@ -55,8 +61,30 @@ export default function LandingPage() {
     }
   };
 
+  // 2. TARIK DATA SETTINGS DARI SUPABASE
+  const fetchSettingsFromSupabase = async () => {
+    try {
+      const { data } = await supabase
+        .from('settings')
+        .select('open_hour, close_hour')
+        .eq('id', 1)
+        .maybeSingle();
+
+      if (data) {
+        setOperatingHours({
+          open: data.open_hour || '10:00',
+          close: data.close_hour || '21:00',
+        });
+      }
+    } catch (err) {
+      console.error('Error fetch settings:', err);
+    }
+  };
+
+  // PANGGIL KEDUA FUNGSI (CUKUP 1 useEffect)
   useEffect(() => {
     fetchMenuFromSupabase();
+    fetchSettingsFromSupabase();
   }, []);
 
   // Persistensi Keranjang Belanja

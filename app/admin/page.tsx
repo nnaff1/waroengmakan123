@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabaseClient'; // Sesuaikan path jika lokasi lib kamu berbeda
+import { supabase } from '@/lib/supabaseClient';
 
 type OrderItem = {
   id: string;
@@ -35,64 +35,89 @@ export default function DashboardPage() {
   const [timeRange, setTimeRange] = useState<'today' | '7days' | 'month'>('today');
   const [orders, setOrders] = useState<Order[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Fetch data pesanan dan menu dari Supabase
- const fetchDashboardData = async () => {
-  setIsLoading(true);
-  try {
-    // 1. Fetch Orders dari Supabase
-    const { data: ordersData, error: ordersErr } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
+  // 1. Fetch data pesanan dan menu (Non-blocking background fetch)
+  const fetchDashboardData = async () => {
+    try {
+      const { data: ordersData, error: ordersErr } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (ordersErr) {
-      console.error('Error orders:', ordersErr.message);
-    } else if (ordersData) {
-      const formattedOrders: Order[] = ordersData.map((o) => ({
-        id: o.id,
-        order_type: o.order_type || 'Dine In',
-        grand_total: Number(o.grand_total || 0),
-        subtotal: Number(o.subtotal || 0),
-        tax: Number(o.tax || 0),
-        created_at: o.created_at,
-        items: Array.isArray(o.items) ? o.items : [],
-      }));
-      setOrders(formattedOrders);
+      if (ordersErr) {
+        console.error('Error orders:', ordersErr.message);
+      } else if (ordersData) {
+        const formattedOrders: Order[] = ordersData.map((o) => ({
+          id: o.id,
+          order_type: o.order_type || 'Dine In',
+          grand_total: Number(o.grand_total || o.total || 0),
+          subtotal: Number(o.subtotal || 0),
+          tax: Number(o.tax || 0),
+          created_at: o.created_at,
+          items: Array.isArray(o.items)
+            ? o.items
+            : typeof o.items === 'string'
+            ? JSON.parse(o.items)
+            : [],
+        }));
+        setOrders(formattedOrders);
+      }
+
+      const { data: menuData, error: menuErr } = await supabase
+        .from('menu_items')
+        .select('*');
+
+      if (menuErr) {
+        console.error('Error menu:', menuErr.message);
+      } else if (menuData) {
+        setMenuItems(
+          menuData.map((m) => ({
+            id: m.id,
+            name: m.name,
+            price: Number(m.price),
+            is_available: m.is_available,
+            image: m.image || DEFAULT_IMAGE,
+          }))
+        );
+      }
+    } catch (err) {
+      console.error('Crash fetching dashboard:', err);
     }
+  };
 
-    // 2. Fetch Menu Items dari Supabase
-    const { data: menuData, error: menuErr } = await supabase
-      .from('menu_items')
-      .select('*');
+  // 2. Real-time Subscription
+  useEffect(() => {
+    fetchDashboardData();
 
-    if (menuErr) {
-      console.error('Error menu:', menuErr.message);
-    } else if (menuData) {
-      setMenuItems(
-        menuData.map((m) => ({
-          id: m.id,
-          name: m.name,
-          price: Number(m.price),
-          is_available: m.is_available,
-          image: m.image || DEFAULT_IMAGE,
-        }))
-      );
-    }
-  } catch (err) {
-    console.error('Crash fetching dashboard:', err);
-  } finally {
-    setIsLoading(false); // Apapun yang terjadi, indikator loading PASTI mati
-  }
-};
-  // 2. Filter pesanan berdasarkan rentang waktu yang dipilih
+    const channel = supabase
+      .channel('realtime-dashboard-orders')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        () => {
+          fetchDashboardData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // 3. Filter pesanan berdasarkan rentang waktu
   const filteredOrders = useMemo(() => {
     const now = new Date();
     return orders.filter((order) => {
+      if (!order.created_at) return true;
       const orderDate = new Date(order.created_at);
+
       if (timeRange === 'today') {
-        return orderDate.toDateString() === now.toDateString();
+        return (
+          orderDate.getDate() === now.getDate() &&
+          orderDate.getMonth() === now.getMonth() &&
+          orderDate.getFullYear() === now.getFullYear()
+        );
       } else if (timeRange === '7days') {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(now.getDate() - 7);
@@ -107,7 +132,7 @@ export default function DashboardPage() {
     });
   }, [orders, timeRange]);
 
-  // 3. Kalkulasi metrik keuangan
+  // 4. Kalkulasi metrik keuangan
   const totalRevenue = useMemo(
     () => filteredOrders.reduce((sum, o) => sum + o.grand_total, 0),
     [filteredOrders]
@@ -115,14 +140,14 @@ export default function DashboardPage() {
   const totalOrdersCount = filteredOrders.length;
   const avgOrderValue = totalOrdersCount > 0 ? totalRevenue / totalOrdersCount : 0;
 
-  // 4. Aggregasi menu terlaris
+  // 5. Aggregasi menu terlaris
   const topSellers = useMemo(() => {
     const itemMap: Record<string, { id: string; name: string; qty: number; revenue: number }> = {};
 
     filteredOrders.forEach((order) => {
       order.items.forEach((item) => {
         if (!itemMap[item.name]) {
-          itemMap[item.name] = { id: item.id, name: item.name, qty: 0, revenue: 0 };
+          itemMap[item.name] = { id: item.id || item.name, name: item.name, qty: 0, revenue: 0 };
         }
         itemMap[item.name].qty += item.qty || 1;
         itemMap[item.name].revenue += (item.price || 0) * (item.qty || 1);
@@ -134,13 +159,13 @@ export default function DashboardPage() {
 
   const bestSellerToday = topSellers[0];
 
-  // 5. Filter stok kosong / habis
+  // 6. Filter stok kosong / habis
   const outOfStockItems = useMemo(
     () => menuItems.filter((item) => !item.is_available),
     [menuItems]
   );
 
-  // 6. Hitung rasio Dine-In vs Takeaway
+  // 7. Hitung rasio Dine-In vs Takeaway
   const orderTypeCounts = useMemo(() => {
     const counts = { dineIn: 0, takeaway: 0 };
     filteredOrders.forEach((o) => {
@@ -149,14 +174,6 @@ export default function DashboardPage() {
     });
     return counts;
   }, [filteredOrders]);
-
-  if (isLoading) {
-    return (
-      <div className="w-full py-20 text-center text-[#736D69] text-sm font-semibold">
-        Memuat data transaksi dan performa restoran...
-      </div>
-    );
-  }
 
   return (
     <div className="w-full max-w-[1800px] mx-auto space-y-8 text-[#2C2623] font-sans">

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabaseClient'; // Sesuaikan dengan lokasi file client supabase kamu
+import { supabase } from '@/lib/supabaseClient';
 
 type MenuItemAdmin = {
   id: string;
@@ -38,38 +38,58 @@ export default function MenuManagerPage() {
     isAvailable: true,
   });
 
-  // 1. FETCH DATA DARI SUPABASE
+  // 1. FETCH DATA DARI SUPABASE (TRY...FINALLY SAFE LOADING)
   const fetchMenu = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from('menu_items')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('menu_items')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Gagal mengambil data dari Supabase:', error.message);
-    } else if (data) {
-      // Mapping dari kolom Supabase (snake_case) ke format Frontend (camelCase)
-      const formattedData: MenuItemAdmin[] = data.map((item) => ({
-        id: item.id,
-        name: item.name,
-        category: item.category,
-        price: Number(item.price),
-        description: item.description || '',
-        image: item.image || DEFAULT_IMAGE,
-        isAvailable: item.is_available ?? true,
-        isPopular: item.is_popular ?? false,
-      }));
-      setMenuList(formattedData);
+      if (error) {
+        console.error('Gagal mengambil data dari Supabase:', error.message);
+      } else if (data) {
+        const formattedData: MenuItemAdmin[] = data.map((item) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          price: Number(item.price),
+          description: item.description || '',
+          image: item.image || DEFAULT_IMAGE,
+          isAvailable: item.is_available ?? true,
+          isPopular: item.is_popular ?? false,
+        }));
+        setMenuList(formattedData);
+      }
+    } catch (err) {
+      console.error('Crash fetching menu:', err);
+    } finally {
+      setIsLoading(false); // MEMAKSA LOADING MATI
     }
-    setIsLoading(false);
   };
 
+  // 2. REALTIME SUBSCRIPTION (DI LUAR FUNGSI FETCH)
   useEffect(() => {
     fetchMenu();
+
+    const channel = supabase
+      .channel('realtime-menu-items')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'menu_items' },
+        () => {
+          fetchMenu();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  // Reset & Open Modal Create
+  // Open Modal Create
   const handleOpenCreateModal = () => {
     setEditingItem(null);
     setFormData({
@@ -99,7 +119,7 @@ export default function MenuManagerPage() {
     setIsModalOpen(true);
   };
 
-  // Upload Gambar dari File Lokal (Base64)
+  // Upload Gambar File Lokal (Base64)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -111,9 +131,8 @@ export default function MenuManagerPage() {
     }
   };
 
-  // 2. TOGGLE STATUS STOK DI SUPABASE
+  // 3. TOGGLE STATUS STOK DI SUPABASE
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
-    // Optimistic Update tampilan
     setMenuList((prev) =>
       prev.map((item) => (item.id === id ? { ...item, isAvailable: !currentStatus } : item))
     );
@@ -125,11 +144,11 @@ export default function MenuManagerPage() {
 
     if (error) {
       alert('Gagal memperbarui status: ' + error.message);
-      fetchMenu(); // Revert data jika gagal
+      fetchMenu();
     }
   };
 
-  // 3. HAPUS MENU DARI SUPABASE
+  // 4. HAPUS MENU DARI SUPABASE
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`Apakah Anda yakin ingin menghapus "${name}"?`)) {
       const { error } = await supabase.from('menu_items').delete().eq('id', id);
@@ -142,7 +161,7 @@ export default function MenuManagerPage() {
     }
   };
 
-  // 4. SIMPAN FORM (CREATE / UPDATE) KE SUPABASE
+  // 5. SIMPAN FORM (CREATE / UPDATE) KE SUPABASE
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     const priceNum = Number(formData.price) || 0;
@@ -159,7 +178,6 @@ export default function MenuManagerPage() {
     };
 
     if (editingItem) {
-      // UPDATE
       const { error } = await supabase
         .from('menu_items')
         .update(payload)
@@ -170,7 +188,6 @@ export default function MenuManagerPage() {
         return;
       }
     } else {
-      // INSERT (Tambah Menu Baru)
       const { error } = await supabase
         .from('menu_items')
         .insert([payload]);
@@ -182,7 +199,7 @@ export default function MenuManagerPage() {
     }
 
     setIsModalOpen(false);
-    fetchMenu(); // Re-fetch data terbaru dari Supabase
+    fetchMenu();
   };
 
   // Filter Search & Category
