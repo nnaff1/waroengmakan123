@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabaseClient';
 type MenuItemAdmin = {
   id: string;
   name: string;
-  category: 'Makanan Utama' | 'Minuman' | 'Cemilan';
+  category: string;
   price: number;
   description: string;
   image: string;
@@ -30,7 +30,7 @@ export default function MenuManagerPage() {
   // Form State
   const [formData, setFormData] = useState({
     name: '',
-    category: 'Makanan Utama' as MenuItemAdmin['category'],
+    category: 'Makanan Utama' as string,
     price: '',
     description: '',
     image: '',
@@ -415,7 +415,7 @@ export default function MenuManagerPage() {
                   <label className="text-xs xl:text-sm font-bold text-[#736D69] block mb-1">Kategori</label>
                   <select
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value as MenuItemAdmin['category'] })}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 xl:p-3 text-xs xl:text-sm focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
                   >
                     <option value="Makanan Utama">Makanan Utama</option>

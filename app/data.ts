@@ -14,10 +14,11 @@ export type ComboItem = {
 export type MenuItem = {
   id: string;
   name: string;
-  category: 'Makanan Utama' | 'Minuman' | 'Cemilan';
+  category: string;
   price: number;
   description: string;
   image: string;
+  isAvailable: boolean;
   isPopular?: boolean;
 };
 
@@ -26,6 +27,7 @@ export type CartItem = {
   name: string;
   price: number;
   qty: number;
+  image?: string;
 };
 
 export const ALL_MEAL_ITEMS: ComboItem[] = [
@@ -123,6 +125,7 @@ export const MENU_ITEMS: MenuItem[] = [
     price: 32000,
     description: 'Daging sapi pilihan dimasak rempah Padang 8 jam hingga empuk meresap.',
     image: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?auto=format&fit=crop&w=800&q=80',
+    isAvailable: true,
     isPopular: true,
   },
   {
@@ -132,6 +135,7 @@ export const MENU_ITEMS: MenuItem[] = [
     price: 26000,
     description: 'Ayam goreng empuk dilumuri sambal balado cabai merah pedas gurih.',
     image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80',
+    isAvailable: true,
   },
   {
     id: 'm3',
@@ -140,6 +144,7 @@ export const MENU_ITEMS: MenuItem[] = [
     price: 22000,
     description: 'Ayam krispi gurih dengan ulekan cabai rawit hijau segar dan jeruk limau.',
     image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80',
+    isAvailable: true,
     isPopular: true,
   },
   {
@@ -149,6 +154,7 @@ export const MENU_ITEMS: MenuItem[] = [
     price: 18000,
     description: 'Espresso robusta-arabika berpadu susu segar dan sirup aren murni.',
     image: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=800&q=80',
+    isAvailable: true,
     isPopular: true,
   },
   {
@@ -158,6 +164,7 @@ export const MENU_ITEMS: MenuItem[] = [
     price: 10000,
     description: 'Perasan jeruk peras asli alami penyegar dahaga tanpa pemanis buatan.',
     image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=800&q=80',
+    isAvailable: true,
   },
   {
     id: 'm6',
@@ -166,6 +173,7 @@ export const MENU_ITEMS: MenuItem[] = [
     price: 16000,
     description: 'Pisang raja crispy ditaburi keju cheddar melimpah dan meses cokelat.',
     image: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?auto=format&fit=crop&w=800&q=80',
+    isAvailable: true,
   },
   {
     id: 'm7',
@@ -174,6 +182,7 @@ export const MENU_ITEMS: MenuItem[] = [
     price: 15000,
     description: 'Ceker ayam presto lembut berselimut cabai rawit mercon ekstra pedas.',
     image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80',
+    isAvailable: true,
     isPopular: true,
   },
 ];

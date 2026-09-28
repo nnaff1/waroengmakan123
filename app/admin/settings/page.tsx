@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'resto' | 'pos' | 'keamanan' | 'ai'>('resto');
@@ -19,11 +20,72 @@ export default function SettingsPage() {
   const [pinCode, setPinCode] = useState('2026');
   const [aiKey, setAiKey] = useState('AIzaSyD-resto-mockup-key-2026');
   const [autoUpsell, setAutoUpsell] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Fetch settings dari Supabase saat halaman dimuat
+  const fetchSettings = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from('settings')
+        .select('*')
+        .eq('id', 1)
+        .maybeSingle();
+
+      if (data) {
+        setRestoName(data.resto_name || 'WaroengMakan123');
+        setPhone(data.phone || '081234567890');
+        setAddress(data.address || 'Jl. Kuliner No. 12, Purwokerto');
+        setOpenHour(data.open_hour || '10:00');
+        setCloseHour(data.close_hour || '21:00');
+        setTaxPercent(data.tax_percent?.toString() || '10');
+        setReceiptFooter(data.receipt_footer || 'Terima kasih atas kunjungan Anda! Silakan datang kembali.');
+        setPinCode(data.pin_code || '2026');
+        setAutoUpsell(data.auto_upsell ?? true);
+      }
+    } catch (err) {
+      console.error('Error fetch settings:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  // Simpan settings ke Supabase
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaveStatus(true);
-    setTimeout(() => setSaveStatus(false), 2500);
+    setIsSaving(true);
+
+    try {
+      const payload = {
+        id: 1,
+        resto_name: restoName,
+        phone,
+        address,
+        open_hour: openHour,
+        close_hour: closeHour,
+        tax_percent: Number(taxPercent) || 10,
+        receipt_footer: receiptFooter,
+        pin_code: pinCode,
+        auto_upsell: autoUpsell,
+      };
+
+      const { error } = await supabase
+        .from('settings')
+        .upsert(payload, { onConflict: 'id' });
+
+      if (error) {
+        alert('Gagal menyimpan pengaturan: ' + error.message);
+      } else {
+        setSaveStatus(true);
+        setTimeout(() => setSaveStatus(false), 2500);
+      }
+    } catch (err) {
+      console.error('Error saving settings:', err);
+      alert('Terjadi kesalahan saat menyimpan.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -230,9 +292,10 @@ export default function SettingsPage() {
 
           <button
             type="submit"
-            className="bg-[#8E3B24] hover:bg-[#78301B] text-white px-6 xl:px-8 py-2.5 xl:py-3.5 rounded-full text-xs xl:text-sm font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+            disabled={isSaving}
+            className="bg-[#8E3B24] hover:bg-[#78301B] disabled:bg-gray-300 text-white px-6 xl:px-8 py-2.5 xl:py-3.5 rounded-full text-xs xl:text-sm font-bold shadow-xs active:scale-95 transition-all cursor-pointer disabled:cursor-not-allowed"
           >
-            Simpan Perubahan
+            {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
           </button>
         </div>
       </form>

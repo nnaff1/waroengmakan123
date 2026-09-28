@@ -2,11 +2,26 @@
 
 import React, { useState } from 'react';
 
-export default function ChatbotButton() {
+type ChatbotProps = {
+  restoName?: string;
+  address?: string;
+  phone?: string;
+  operatingHours?: { open: string; close: string };
+};
+
+export default function ChatbotButton({
+  restoName = 'WaroengMakan123',
+  address = 'Jl. Kuliner No. 12, Purwokerto',
+  phone = '081234567890',
+  operatingHours,
+}: ChatbotProps) {
+  const openTime = (operatingHours?.open || '10:00').slice(0, 5);
+  const closeTime = (operatingHours?.close || '21:00').slice(0, 5);
+
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<Array<{ sender: 'ai' | 'user'; text: string }>>([
-    { sender: 'ai', text: 'Halo! Ada yang bisa AI bantu pilihkan untuk santapan hari ini?' },
+    { sender: 'ai', text: `Halo! Saya asisten virtual ${restoName}. Ada yang bisa dibantu tentang menu prasmanan hari ini?` },
   ]);
 
   const handleSendChat = (e: React.FormEvent) => {
@@ -19,20 +34,22 @@ export default function ChatbotButton() {
 
     setTimeout(() => {
       const q = userMsg.toLowerCase();
-      let reply = 'Kami punya ragam sajian Nusantara autentik. Coba gunakan fitur AI Matcher di atas untuk rekomendasi instan!';
+      let reply = `Kami menyajikan konsep prasmanan Nusantara hangat & higienis di ${restoName}. Silakan cek katalog menu atau coba AI Matcher untuk rekomendasi kombo!`;
 
-      if (q.includes('pedas') || q.includes('sambal')) {
-        reply = 'Pecinta pedas wajib coba Nasi Ayam Geprek Sambal Ijo atau Ceker Mercon Kuah Pedas!';
-      } else if (q.includes('manis') || q.includes('kopi') || q.includes('cemil')) {
-        reply = 'Pasangan sempurna buat santai: Pisang Goreng Keju Cokelat + Es Kopi Susu Gula Aren.';
-      } else if (q.includes('hemat') || q.includes('murah') || q.includes('budget')) {
-        reply = 'Untuk paket hemat di bawah Rp30k, Nasi Ayam Geprek + Es Teh atau Nasi Telur Dadar jadi primadona!';
-      } else if (q.includes('buka') || q.includes('jam') || q.includes('lokasi')) {
-        reply = 'Kami buka setiap hari pukul 10:00 - 22:00 WIB di Cabang Purwokerto dan Bandung!';
+      if (q.includes('prasmanan') || q.includes('konsep') || q.includes('pesan')) {
+        reply = `${restoName} mengusung konsep prasmanan: kamu bisa ambil dan kombinasikan aneka lauk, sayur, dan sambal sesuai selera langsung di outlet!`;
+      } else if (q.includes('pedas') || q.includes('sambal')) {
+        reply = 'Pecinta pedas wajib coba olahan Sambal Ijo, Sambal Balado, atau Ceker Mercon racikan bumbu khas kami!';
+      } else if (q.includes('manis') || q.includes('kopi') || q.includes('minum')) {
+        reply = 'Segarkan dahaga dengan Es Kopi Susu Gula Aren atau Es Jeruk Peras Murni kami!';
+      } else if (q.includes('hemat') || q.includes('murah') || q.includes('harga') || q.includes('budget')) {
+        reply = 'Harga menu kami sangat terjangkau, mulai dari Rp10.000-an saja untuk lauk dan sayur lezat berkualitas!';
+      } else if (q.includes('buka') || q.includes('jam') || q.includes('lokasi') || q.includes('alamat')) {
+        reply = `${restoName} buka setiap hari pukul ${openTime} - ${closeTime} WIB. Alamat kami di ${address}. WhatsApp: ${phone}`;
       }
 
       setChatMessages((prev) => [...prev, { sender: 'ai', text: reply }]);
-    }, 400);
+    }, 350);
   };
 
   return (

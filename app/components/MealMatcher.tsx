@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient'; // Sesuaikan path jika lokasi lib kamu berbeda
 
@@ -76,7 +76,7 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
   }, []);
 
   // 2. Racik kombo secara dinamis dari data asli Supabase
-  const generateRecommendation = (
+  const generateRecommendation = useCallback((
     items: MenuItem[],
     currentBudget = budget,
     currentTaste = taste,
@@ -143,7 +143,7 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
       rationale,
       image: mainImage,
     });
-  };
+  }, [budget, taste, mood]);
 
   const handleMatchClick = () => {
     generateRecommendation(menuItems, budget, taste, mood);
@@ -157,14 +157,11 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
   };
 
   return (
-    <section className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 xl:px-10 py-12">
+    <section id="ai-matcher" className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 xl:px-10 py-12 scroll-mt-10">
       {/* Header */}
       <div className="text-center space-y-2 mb-10">
-        <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-[#4E6148] bg-[#EFE9DF] px-3.5 py-1 rounded-full border border-[#E2DDD5]">
-          WAROENG AI ENGINE V2.5
-        </span>
         <h2 className="text-2xl sm:text-3xl xl:text-4xl font-extrabold text-[#2C2623] tracking-tight">
-          Bingung Makan Apa? Biarkan AI Meracik
+          Bingung Makan Apa?
         </h2>
         <p className="text-xs sm:text-sm text-[#6C6663]">
           Pilih preferensi rasa dan bujet, sistem kami akan memadukan menu paling cocok dari stok dapur real-time.
@@ -180,7 +177,7 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
               1. KONDISI MOOD
             </label>
             <div className="flex flex-wrap gap-2">
-              {['Lapar Banget', 'Santal', 'Fokus', 'Self-Reward'].map((item) => (
+              {['Lapar Banget', 'Santai', 'Fokus', 'Self-Reward'].map((item) => (
                 <button
                   key={item}
                   type="button"
@@ -272,7 +269,7 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
             disabled={isLoadingMenu || menuItems.length === 0}
             className="w-full bg-[#3A4836] hover:bg-[#2D382A] disabled:bg-gray-300 text-white py-3.5 rounded-2xl text-xs sm:text-sm font-extrabold transition-all shadow-md active:scale-98 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            ✨ TEMUKAN KOMBO MENU SEKARANG
+            TEMUKAN KOMBO MENU
           </button>
         </div>
 
@@ -308,13 +305,13 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
                     onClick={handleMatchClick}
                     className="text-xs font-bold text-[#8E3B24] hover:underline shrink-0 ml-2 cursor-pointer"
                   >
-                    🎲 Acak Lain
+                    Acak Lain
                   </button>
                 </div>
 
                 <div className="bg-[#FAF8F5] border border-[#EFECE6] p-4 rounded-2xl space-y-1">
                   <span className="text-[10px] font-bold text-[#4E6148] uppercase tracking-wider block">
-                    💡 ANALISIS AI:
+                    CATATAN:
                   </span>
                   <p className="text-xs text-[#6C6663] italic leading-relaxed">
                     &quot;{matchedCombo.rationale}&quot;
