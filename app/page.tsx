@@ -10,12 +10,15 @@ import { supabase } from '@/lib/supabaseClient';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
 
+// 1. TAMBAHAN: Properti reply & replied_at
 type FeaturedReview = {
   id: string;
   customer_name: string;
   rating: number;
   comment: string;
   ordered_menu: string;
+  reply?: string;
+  replied_at?: string;
 };
 
 export default function LandingPage() {
@@ -107,12 +110,13 @@ export default function LandingPage() {
     }
   }, []);
 
-  // 3. Tarik Data Review Murni dari Supabase (Hanya yang is_featured = true)
+  // 3. Tarik Data Review Murni dari Supabase (Termasuk Balasan Admin)
   const fetchReviewsFromSupabase = useCallback(async () => {
     try {
+      // 2. TAMBAHAN: Tarik kolom reply dan replied_at
       const { data, error } = await supabase
         .from('reviews')
-        .select('id, customer_name, rating, comment, ordered_menu')
+        .select('id, customer_name, rating, comment, ordered_menu, reply, replied_at')
         .eq('is_featured', true)
         .order('created_at', { ascending: false })
         .limit(6);
@@ -122,7 +126,6 @@ export default function LandingPage() {
         return;
       }
 
-      // HANYA SET DATA REVIEWS JIKA ADA DI DATABASE (TIDAK PAKAI DUMMY FALLBACK)
       setFeaturedReviews(data || []);
     } catch (err) {
       console.error('Catch Error fetch reviews:', err);
@@ -142,7 +145,7 @@ export default function LandingPage() {
           rating: formReview.rating,
           ordered_menu: formReview.orderedMenu || 'Menu Prasmanan',
           comment: formReview.comment,
-          is_featured: false, // Default false, menunggu di-approve/dipin oleh admin
+          is_featured: false,
         },
       ]);
 
@@ -170,19 +173,16 @@ export default function LandingPage() {
     fetchSettingsFromSupabase();
     fetchReviewsFromSupabase();
 
-    // Channel Realtime Menu
     const menuChannel = supabase
       .channel('landing-menu-items-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items' }, fetchMenuFromSupabase)
       .subscribe();
 
-    // Channel Realtime Settings
     const settingsChannel = supabase
       .channel('landing-settings-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, fetchSettingsFromSupabase)
       .subscribe();
 
-    // Channel Realtime Reviews (Mendeteksi aksi Pin/Unpin Admin secara langsung)
     const reviewsChannel = supabase
       .channel('landing-reviews-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, fetchReviewsFromSupabase)
@@ -226,7 +226,7 @@ export default function LandingPage() {
         address={settings.address}
       />
 
-      {/* KATALOG MENU PRASMANAN (SHOWCASE / PROFILE) */}
+      {/* KATALOG MENU PRASMANAN */}
       <section id="menu" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-18 scroll-mt-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-5">
           <div>
@@ -242,7 +242,6 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Search Box */}
           <div className="relative w-full sm:w-72 md:w-80">
             <input
               type="text"
@@ -257,7 +256,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Category Pills Slider */}
         <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-none mb-8">
           {dynamicCategories.map((cat) => {
             const isActive = activeCategory === cat;
@@ -278,7 +276,6 @@ export default function LandingPage() {
           })}
         </div>
 
-        {/* Menu Grid */}
         {isLoadingMenu ? (
           <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-[#DCD5C3]">
             <div className="w-10 h-10 border-3 border-[#8E3B24] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
@@ -304,7 +301,6 @@ export default function LandingPage() {
                   }`}
                 >
                   <div>
-                    {/* Image Container */}
                     <div className="relative h-44 sm:h-52 w-full bg-[#FAF8F5]">
                       <Image
                         src={item.image || DEFAULT_IMAGE}
@@ -315,7 +311,6 @@ export default function LandingPage() {
                         className={`object-cover transition-transform duration-300 ${isAvailable ? 'hover:scale-105' : 'grayscale'}`}
                       />
 
-                      {/* Badges */}
                       <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
                         <span className="bg-[#FAF8F5]/90 backdrop-blur-md text-[#8E3B24] text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider border border-[#E5DEC9]">
                           {item.category}
@@ -333,7 +328,6 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    {/* Content */}
                     <div className="p-4 sm:p-5 space-y-1.5">
                       <h3 className="font-extrabold text-sm sm:text-base text-[#2C2623] leading-snug line-clamp-1">
                         {item.name}
@@ -344,7 +338,6 @@ export default function LandingPage() {
                     </div>
                   </div>
 
-                  {/* Price & Availability Status */}
                   <div className="p-4 sm:p-5 pt-0 flex items-center justify-between gap-3 border-t border-[#FAF8F5]">
                     <div>
                       <span className="text-[10px] text-[#A89D98] block uppercase font-bold">Harga Porsi</span>
@@ -371,7 +364,7 @@ export default function LandingPage() {
         )}
       </section>
 
-      {/* SECTION: PAKET NASI KOTAK & KATERING PRASMANAN */}
+      {/* SECTION: KATERING */}
       <section id="katering" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 border-t border-[#E5DEC9] scroll-mt-10">
         <div className="bg-[#FAF8F5] rounded-3xl p-6 sm:p-10 border border-[#E5DEC9] shadow-xs">
           <div className="max-w-2xl mb-8 space-y-2">
@@ -387,7 +380,6 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-            {/* Paket 1 */}
             <div className="bg-white p-5 sm:p-6 rounded-2xl border border-[#E5DEC9] shadow-2xs space-y-3">
               <span className="text-[10px] font-black uppercase text-[#4E6148] tracking-wider block">
                 Paket Praktis
@@ -402,7 +394,6 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Paket 2 */}
             <div className="bg-white p-5 sm:p-6 rounded-2xl border border-[#8E3B24] shadow-sm space-y-3 relative">
               <span className="absolute -top-2.5 right-4 bg-[#8E3B24] text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                 Paling Laris
@@ -420,7 +411,6 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Paket 3 */}
             <div className="bg-white p-5 sm:p-6 rounded-2xl border border-[#E5DEC9] shadow-2xs space-y-3">
               <span className="text-[10px] font-black uppercase text-[#4E6148] tracking-wider block">
                 Acara & Hajatan
@@ -541,7 +531,6 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Tombol Buka Modal Tulis Ulasan */}
           <button
             onClick={() => setIsReviewModalOpen(true)}
             className="bg-[#8E3B24] hover:bg-[#78301B] text-white px-6 py-3 rounded-full text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center gap-2 shrink-0 cursor-pointer"
@@ -565,10 +554,25 @@ export default function LandingPage() {
                       <span key={i}>{i < review.rating ? '★' : '☆'}</span>
                     ))}
                   </div>
+                  
+                  {/* Komentar Pelanggan */}
                   <p className="text-sm text-[#524D4A] leading-relaxed italic">
                     "{review.comment}"
                   </p>
+
+                  {/* 3. TAMBAHAN: Tampilkan Box Balasan Admin Jika Ada */}
+                  {review.reply && (
+                    <div className="bg-[#F8F6F2] rounded-2xl p-3.5 sm:p-4 border border-[#E5DEC9] space-y-1 mt-2">
+                      <span className="text-[11px] font-bold text-[#8E3B24] block">
+                        💬 Balasan dari {settings.restoName}:
+                      </span>
+                      <p className="text-xs text-[#524D4A] leading-relaxed">
+                        {review.reply}
+                      </p>
+                    </div>
+                  )}
                 </div>
+
                 <div className="pt-4 border-t border-[#F2EDE4] flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-[#8E3B24] text-white font-bold flex items-center justify-center text-sm shadow-xs shrink-0">
                     {review.customer_name.charAt(0).toUpperCase()}
@@ -616,7 +620,6 @@ export default function LandingPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmitNewReview} className="space-y-4">
-                {/* Rating Bintang */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#554F4C] block">
                     Rating Kepuasan <span className="text-red-500">*</span>
@@ -637,7 +640,6 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                {/* Nama Pelanggan */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-[#554F4C] block">
                     Nama Anda <span className="text-red-500">*</span>
@@ -652,7 +654,6 @@ export default function LandingPage() {
                   />
                 </div>
 
-                {/* Menu yang Dipesan */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-[#554F4C] block">
                     Menu yang Dipesan / Ditiptip (Opsional)
@@ -666,7 +667,6 @@ export default function LandingPage() {
                   />
                 </div>
 
-                {/* Isi Ulasan */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-[#554F4C] block">
                     Ulasan / Pengalaman Makan <span className="text-red-500">*</span>
@@ -681,7 +681,6 @@ export default function LandingPage() {
                   />
                 </div>
 
-                {/* Submit Buttons */}
                 <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E5DEC9]">
                   <button
                     type="button"
@@ -704,7 +703,7 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* FILOSOFI / TENTANG KAMI */}
+      {/* TENTANG KAMI */}
       <section id="about" className="bg-[#F2EDE4] py-14 sm:py-18 px-6 border-t border-[#E5DEC9] scroll-mt-10">
         <div className="max-w-3xl mx-auto text-center space-y-3.5">
           <span className="text-[11px] font-black text-[#8E3B24] uppercase tracking-wider block">
