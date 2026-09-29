@@ -166,7 +166,23 @@ export default function KasirPage() {
       }
       setIsLoading(false);
     }
+
     fetchMenus();
+
+    const channel = supabase
+      .channel('kasir-menu-items-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'menu_items' },
+        () => {
+          fetchMenus();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const handleAddItem = (item: POSItem) => {

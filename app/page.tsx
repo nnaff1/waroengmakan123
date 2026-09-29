@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Footer from './components/Footer';
-import { CartItem, MenuItem } from './data';
+import { MenuItem } from './data';
 import { supabase } from '@/lib/supabaseClient';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
@@ -13,14 +13,8 @@ const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c
 export default function LandingPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoadingMenu, setIsLoadingMenu] = useState(true);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Form Pemesanan Prasmanan (Tanpa nomor meja / dine in)
-  const [customerName, setCustomerName] = useState('');
-  const [customerNotes, setCustomerNotes] = useState('');
 
   // Profil & Pengaturan Restoran dari Supabase
   const [settings, setSettings] = useState({
@@ -94,82 +88,36 @@ export default function LandingPage() {
   useEffect(() => {
     fetchMenuFromSupabase();
     fetchSettingsFromSupabase();
+
+    // Subscribe ke perubahan menu_items secara real-time
+    const menuChannel = supabase
+      .channel('landing-menu-items-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'menu_items' },
+        () => {
+          fetchMenuFromSupabase();
+        }
+      )
+      .subscribe();
+
+    // Subscribe ke perubahan settings resto secara real-time
+    const settingsChannel = supabase
+      .channel('landing-settings-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'settings' },
+        () => {
+          fetchSettingsFromSupabase();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(menuChannel);
+      supabase.removeChannel(settingsChannel);
+    };
   }, [fetchMenuFromSupabase, fetchSettingsFromSupabase]);
-
-  // Persistensi Keranjang Belanja
-  useEffect(() => {
-    const saved = localStorage.getItem('waroeng_cart');
-    if (saved) {
-      try {
-        setCart(JSON.parse(saved));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('waroeng_cart', JSON.stringify(cart));
-  }, [cart]);
-
-  // Manajemen Item Keranjang
-  const addToCart = (item: { id: string; name: string; price: number; image?: string }) => {
-    setCart((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
-      if (existing) {
-        return prev.map((i) => (i.id === item.id ? { ...i, qty: i.qty + 1 } : i));
-      }
-      return [...prev, { id: item.id, name: item.name, price: item.price, qty: 1, image: item.image }];
-    });
-  };
-
-  const updateQty = (id: string, delta: number) => {
-    setCart((prev) =>
-      prev
-        .map((item) => (item.id === id ? { ...item, qty: item.qty + delta } : item))
-        .filter((item) => item.qty > 0)
-    );
-  };
-
-  const getItemQty = (id: string) => {
-    return cart.find((i) => i.id === id)?.qty || 0;
-  };
-
-  const subtotalPrice = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.qty, 0), [cart]);
-  const taxAmount = useMemo(() => Math.round(subtotalPrice * (settings.taxPercent / 100)), [subtotalPrice, settings.taxPercent]);
-  const totalPrice = useMemo(() => subtotalPrice + taxAmount, [subtotalPrice, taxAmount]);
-  const totalCount = useMemo(() => cart.reduce((sum, item) => sum + item.qty, 0), [cart]);
-
-  // Checkout Pesanan ke WhatsApp
-  const handleWhatsAppCheckout = () => {
-    if (cart.length === 0 || !customerName.trim()) return;
-
-    const cleanPhone = settings.phone ? settings.phone.replace(/\D/g, '') : (process.env.NEXT_PUBLIC_WA_NUMBER || '6281234567890');
-
-    let message = `*PESANAN HIDANGAN PRASMANAN - ${settings.restoName.toUpperCase()}*\n`;
-    message += `─────────────────────────\n`;
-    message += `👤 *Nama Pemesan:* ${customerName.trim()}\n`;
-    if (customerNotes.trim()) {
-      message += `📝 *Catatan Sajian:* ${customerNotes.trim()}\n`;
-    }
-    message += `─────────────────────────\n\n`;
-    message += `*Daftar Lauk & Sayur Dipilih:*\n`;
-
-    cart.forEach((item, idx) => {
-      message += `${idx + 1}. ${item.name} (${item.qty}x) - Rp ${(item.price * item.qty).toLocaleString('id-ID')}\n`;
-    });
-
-    message += `\n─────────────────────────\n`;
-    message += `Subtotal: Rp ${subtotalPrice.toLocaleString('id-ID')}\n`;
-    if (taxAmount > 0) {
-      message += `Pajak Resto (${settings.taxPercent}%): Rp ${taxAmount.toLocaleString('id-ID')}\n`;
-    }
-    message += `*TOTAL PEMBAYARAN: Rp ${totalPrice.toLocaleString('id-ID')}*\n`;
-    message += `─────────────────────────\n`;
-    message += `Halo ${settings.restoName}, saya ingin mengonfirmasi pesanan di atas. Mohon infokan ketersediaannya ya. Terima kasih!`;
-
-    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
-  };
 
   // Kategori Dinamis dari Menu yang Tersedia
   const dynamicCategories = useMemo(() => {
@@ -193,8 +141,6 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#F8F6F2] text-[#2C2623] font-sans antialiased flex flex-col selection:bg-[#8E3B24] selection:text-white">
       {/* NAVBAR */}
       <Navbar
-        cartCount={totalCount}
-        onOpenCart={() => setIsCartOpen(true)}
         restoName={settings.restoName}
         phone={settings.phone}
       />
@@ -206,7 +152,7 @@ export default function LandingPage() {
         address={settings.address}
       />
 
-      {/* KATALOG MENU PRASMANAN */}
+      {/* KATALOG MENU PRASMANAN (SHOWCASE / PROFILE) */}
       <section id="menu" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-18 scroll-mt-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-5">
           <div>
@@ -218,7 +164,7 @@ export default function LandingPage() {
               Katalog Pilihan Prasmanan
             </h2>
             <p className="text-xs sm:text-sm text-[#736D69] mt-1 max-w-lg">
-              Dimasak segar setiap pagi dengan bumbu rempah Nusantara autentik. Tambahkan ke piring pesananmu.
+              Dimasak segar setiap pagi dengan bumbu rempah Nusantara autentik. Pilihan lauk dan sayur fresh yang siap disajikan langsung di etalase kami.
             </p>
           </div>
 
@@ -272,7 +218,6 @@ export default function LandingPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
             {filteredMenu.map((item) => {
-              const qtyInCart = getItemQty(item.id);
               const isAvailable = item.isAvailable;
 
               return (
@@ -286,7 +231,7 @@ export default function LandingPage() {
                 >
                   <div>
                     {/* Image Container */}
-                    <div className="relative h-44 sm:h-48 w-full bg-[#FAF8F5]">
+                    <div className="relative h-44 sm:h-52 w-full bg-[#FAF8F5]">
                       <Image
                         src={item.image || DEFAULT_IMAGE}
                         alt={item.name}
@@ -325,45 +270,24 @@ export default function LandingPage() {
                     </div>
                   </div>
 
-                  {/* Price & Action */}
+                  {/* Price & Availability Status (Murni Showcase Profile) */}
                   <div className="p-4 sm:p-5 pt-0 flex items-center justify-between gap-3 border-t border-[#FAF8F5]">
                     <div>
-                      <span className="text-[10px] text-[#A89D98] block uppercase font-bold">Harga</span>
-                      <span className="text-sm sm:text-base font-black text-[#2C2623]">
+                      <span className="text-[10px] text-[#A89D98] block uppercase font-bold">Harga Porsi</span>
+                      <span className="text-sm sm:text-base font-black text-[#8E3B24]">
                         Rp {item.price.toLocaleString('id-ID')}
                       </span>
                     </div>
 
                     {!isAvailable ? (
                       <span className="text-xs font-bold text-[#A89D98] bg-[#F2EDE4] px-3.5 py-1.5 rounded-full">
-                        Stok Kosong
+                        Stok Habis
                       </span>
-                    ) : qtyInCart > 0 ? (
-                      <div className="flex items-center gap-1.5 bg-[#4E6148] text-white px-2 py-1 rounded-full shadow-xs">
-                        <button
-                          type="button"
-                          onClick={() => updateQty(item.id, -1)}
-                          className="w-6 h-6 rounded-full hover:bg-white/20 flex items-center justify-center font-bold text-xs cursor-pointer"
-                        >
-                          -
-                        </button>
-                        <span className="text-xs font-black min-w-4 text-center">{qtyInCart}</span>
-                        <button
-                          type="button"
-                          onClick={() => updateQty(item.id, 1)}
-                          className="w-6 h-6 rounded-full hover:bg-white/20 flex items-center justify-center font-bold text-xs cursor-pointer"
-                        >
-                          +
-                        </button>
-                      </div>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => addToCart(item)}
-                        className="bg-[#4E6148] hover:bg-[#3D4D38] text-white px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 shadow-xs cursor-pointer flex items-center gap-1"
-                      >
-                        <span>+</span> Tambah
-                      </button>
+                      <span className="text-[11px] font-bold text-[#4E6148] bg-[#4E6148]/10 px-3 py-1 rounded-full flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#4E6148]" />
+                        Tersedia
+                      </span>
                     )}
                   </div>
                 </div>
@@ -552,157 +476,6 @@ export default function LandingPage() {
         phone={settings.phone}
         operatingHours={{ open: settings.openHour, close: settings.closeHour }}
       />
-
-      {/* DRAWER KERANJANG BELANJA PRASMANAN */}
-      {isCartOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex justify-end animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-[#FAF8F5] h-full p-5 sm:p-7 flex flex-col justify-between shadow-2xl overflow-y-auto border-l border-[#E5DEC9]">
-            <div className="space-y-5">
-              {/* Header Drawer */}
-              <div className="flex justify-between items-center border-b border-[#E5DEC9] pb-4">
-                <div>
-                  <h3 className="font-black text-lg text-[#2C2623]">Pilihan Sajian Prasmanan</h3>
-                  <span className="text-xs font-semibold text-[#736D69]">{totalCount} porsi dalam daftar pesanan</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsCartOpen(false)}
-                  className="w-8 h-8 rounded-full bg-white border border-[#E5DEC9] flex items-center justify-center font-bold text-[#736D69] hover:bg-[#F2EDE4] cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Items List */}
-              {cart.length === 0 ? (
-                <div className="text-center py-16 space-y-3">
-                  <div className="w-14 h-14 rounded-2xl bg-white border border-[#E5DEC9] flex items-center justify-center mx-auto text-[#A89D98]">
-                    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                  </div>
-                  <p className="text-xs sm:text-sm text-[#736D69] font-semibold">Belum ada hidangan dipilih.</p>
-                  <p className="text-[11px] text-[#A89D98]">Silakan jelajahi katalog menu prasmanan dan klik + Tambah.</p>
-                </div>
-              ) : (
-                <div className="space-y-2.5 max-h-[42vh] overflow-y-auto pr-1">
-                  {cart.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-[#E5DEC9] shadow-xs"
-                    >
-                      <div className="flex items-center gap-3 pr-2">
-                        {item.image && (
-                          <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-[#F2EDE4]">
-                            <Image src={item.image} alt={item.name} fill unoptimized className="object-cover" />
-                          </div>
-                        )}
-                        <div>
-                          <h4 className="text-xs sm:text-sm font-bold text-[#2C2623] line-clamp-1">{item.name}</h4>
-                          <span className="text-xs font-black text-[#8E3B24]">
-                            Rp {(item.price * item.qty).toLocaleString('id-ID')}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 bg-[#F2EDE4] px-1.5 py-1 rounded-full border border-[#D5CEB9]">
-                        <button
-                          type="button"
-                          onClick={() => updateQty(item.id, -1)}
-                          className="w-5 h-5 rounded-full bg-white hover:bg-gray-100 flex items-center justify-center text-xs font-bold text-[#2C2623] shadow-2xs cursor-pointer"
-                        >
-                          -
-                        </button>
-                        <span className="text-xs font-bold min-w-4 text-center">{item.qty}</span>
-                        <button
-                          type="button"
-                          onClick={() => updateQty(item.id, 1)}
-                          className="w-5 h-5 rounded-full bg-white hover:bg-gray-100 flex items-center justify-center text-xs font-bold text-[#2C2623] shadow-2xs cursor-pointer"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Form Data Pemesan (Tanpa Meja / Dine-in) */}
-              {cart.length > 0 && (
-                <div className="space-y-3 pt-3 border-t border-[#E5DEC9]">
-                  <span className="text-xs font-extrabold text-[#2C2623] uppercase tracking-wider block">
-                    Data Pemesan Prasmanan
-                  </span>
-                  <div>
-                    <label className="text-[11px] font-bold text-[#736D69] block mb-1">
-                      Nama Pemesan <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Masukkan nama Anda..."
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                      className="w-full text-xs bg-white border border-[#E5DEC9] rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#8E3B24]"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-[#736D69] block mb-1">
-                      Catatan Sajian (Opsional)
-                    </label>
-                    <textarea
-                      placeholder="Misal: Sambal dipisah, bungkus 2 porsi terpisah, ambil jam 12..."
-                      value={customerNotes}
-                      onChange={(e) => setCustomerNotes(e.target.value)}
-                      rows={2}
-                      className="w-full text-xs bg-white border border-[#E5DEC9] rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#8E3B24] resize-none"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Bottom Summary & WhatsApp Checkout */}
-            <div className="pt-4 border-t border-[#E5DEC9] space-y-3 mt-4">
-              <div className="space-y-1.5 text-xs text-[#736D69]">
-                <div className="flex justify-between">
-                  <span>Subtotal ({totalCount} item):</span>
-                  <span className="font-semibold text-[#2C2623]">Rp {subtotalPrice.toLocaleString('id-ID')}</span>
-                </div>
-                {taxAmount > 0 && (
-                  <div className="flex justify-between">
-                    <span>Pajak Restoran ({settings.taxPercent}%):</span>
-                    <span className="font-semibold text-[#2C2623]">Rp {taxAmount.toLocaleString('id-ID')}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center text-sm font-black text-[#2C2623] pt-1.5 border-t border-[#E5DEC9]">
-                  <span>Total Tagihan:</span>
-                  <span className="text-lg font-black text-[#8E3B24]">
-                    Rp {totalPrice.toLocaleString('id-ID')}
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleWhatsAppCheckout}
-                disabled={cart.length === 0 || !customerName.trim()}
-                className="w-full bg-[#4E6148] hover:bg-[#3D4D38] disabled:bg-gray-300 text-white py-3.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all shadow-md active:scale-98 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                  <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.069-2.023-.482-1.616-.672-2.65-2.316-2.731-2.424-.081-.108-.654-.871-.654-1.662 0-.791.414-1.179.562-1.339.148-.16.323-.2.431-.2.108 0 .216.002.311.007.1.005.234-.038.366.279.135.324.46 1.125.5 1.206.04.081.067.176.013.283-.054.108-.081.176-.162.27-.081.094-.171.21-.244.282-.081.08-.166.167-.071.33.095.162.42 6.94 1.488 7.892 1.378 1.229 2.54 1.613 2.901 1.776.36.163.57.135.782-.108.212-.243.909-1.06 1.15-1.424.24-.364.48-.303.805-.182.324.121 2.056.97 2.408 1.146.351.175.586.262.672.411.085.148.085.861-.059 1.266z" />
-                </svg>
-                <span>Pesan Lewat WhatsApp</span>
-              </button>
-
-              {!customerName.trim() && cart.length > 0 && (
-                <p className="text-[11px] text-[#8E3B24] font-medium text-center">
-                  * Harap isi nama pemesan terlebih dahulu
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
