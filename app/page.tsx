@@ -10,11 +10,33 @@ import { supabase } from '@/lib/supabaseClient';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
 
+type FeaturedReview = {
+  id: string;
+  customer_name: string;
+  rating: number;
+  comment: string;
+  ordered_menu: string;
+};
+
 export default function LandingPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoadingMenu, setIsLoadingMenu] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // State untuk Review Terpilih (Murni Real-Time dari Supabase)
+  const [featuredReviews, setFeaturedReviews] = useState<FeaturedReview[]>([]);
+
+  // State Form Input Review Baru oleh User
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [formReview, setFormReview] = useState({
+    customerName: '',
+    rating: 5,
+    orderedMenu: '',
+    comment: '',
+  });
 
   // Profil & Pengaturan Restoran dari Supabase
   const [settings, setSettings] = useState({
@@ -85,39 +107,93 @@ export default function LandingPage() {
     }
   }, []);
 
+  // 3. Tarik Data Review Murni dari Supabase (Hanya yang is_featured = true)
+  const fetchReviewsFromSupabase = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('id, customer_name, rating, comment, ordered_menu')
+        .eq('is_featured', true)
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (error) {
+        console.error('Error Supabase reviews:', error.message);
+        return;
+      }
+
+      // HANYA SET DATA REVIEWS JIKA ADA DI DATABASE (TIDAK PAKAI DUMMY FALLBACK)
+      setFeaturedReviews(data || []);
+    } catch (err) {
+      console.error('Catch Error fetch reviews:', err);
+    }
+  }, []);
+
+  // Handler Submit Review Baru dari User
+  const handleSubmitNewReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formReview.customerName || !formReview.comment) return;
+
+    setIsSubmittingReview(true);
+    try {
+      const { error } = await supabase.from('reviews').insert([
+        {
+          customer_name: formReview.customerName,
+          rating: formReview.rating,
+          ordered_menu: formReview.orderedMenu || 'Menu Prasmanan',
+          comment: formReview.comment,
+          is_featured: false, // Default false, menunggu di-approve/dipin oleh admin
+        },
+      ]);
+
+      if (error) {
+        console.error('Error detail insert review:', error.message);
+        alert(`Gagal mengirimkan ulasan: ${error.message}`);
+        return;
+      }
+
+      setSubmitSuccess(true);
+      setTimeout(() => {
+        setSubmitSuccess(false);
+        setIsReviewModalOpen(false);
+        setFormReview({ customerName: '', rating: 5, orderedMenu: '', comment: '' });
+      }, 1500);
+    } catch (err) {
+      console.error('Error insert review:', err);
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
   useEffect(() => {
     fetchMenuFromSupabase();
     fetchSettingsFromSupabase();
+    fetchReviewsFromSupabase();
 
-    // Subscribe ke perubahan menu_items secara real-time
+    // Channel Realtime Menu
     const menuChannel = supabase
       .channel('landing-menu-items-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'menu_items' },
-        () => {
-          fetchMenuFromSupabase();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items' }, fetchMenuFromSupabase)
       .subscribe();
 
-    // Subscribe ke perubahan settings resto secara real-time
+    // Channel Realtime Settings
     const settingsChannel = supabase
       .channel('landing-settings-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'settings' },
-        () => {
-          fetchSettingsFromSupabase();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, fetchSettingsFromSupabase)
+      .subscribe();
+
+    // Channel Realtime Reviews (Mendeteksi aksi Pin/Unpin Admin secara langsung)
+    const reviewsChannel = supabase
+      .channel('landing-reviews-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, fetchReviewsFromSupabase)
       .subscribe();
 
     return () => {
       supabase.removeChannel(menuChannel);
       supabase.removeChannel(settingsChannel);
+      supabase.removeChannel(reviewsChannel);
     };
-  }, [fetchMenuFromSupabase, fetchSettingsFromSupabase]);
+  }, [fetchMenuFromSupabase, fetchSettingsFromSupabase, fetchReviewsFromSupabase]);
 
   // Kategori Dinamis dari Menu yang Tersedia
   const dynamicCategories = useMemo(() => {
@@ -131,8 +207,9 @@ export default function LandingPage() {
   const filteredMenu = useMemo(() => {
     return menuItems.filter((item) => {
       const matchesCategory = activeCategory === 'Semua' || item.category === activeCategory;
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesSearch =
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesCategory && matchesSearch;
     });
   }, [menuItems, activeCategory, searchQuery]);
@@ -140,10 +217,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#F8F6F2] text-[#2C2623] font-sans antialiased flex flex-col selection:bg-[#8E3B24] selection:text-white">
       {/* NAVBAR */}
-      <Navbar
-        restoName={settings.restoName}
-        phone={settings.phone}
-      />
+      <Navbar restoName={settings.restoName} phone={settings.phone} />
 
       {/* HERO SECTION */}
       <Hero
@@ -270,7 +344,7 @@ export default function LandingPage() {
                     </div>
                   </div>
 
-                  {/* Price & Availability Status (Murni Showcase Profile) */}
+                  {/* Price & Availability Status */}
                   <div className="p-4 sm:p-5 pt-0 flex items-center justify-between gap-3 border-t border-[#FAF8F5]">
                     <div>
                       <span className="text-[10px] text-[#A89D98] block uppercase font-bold">Harga Porsi</span>
@@ -451,6 +525,184 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* SECTION ULASAN PELANGGAN & TOMBOL TULIS ULASAN */}
+      <section id="reviews" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 border-t border-[#E5DEC9] scroll-mt-10">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-[#4E6148] uppercase tracking-wider block">
+              Testimoni
+            </span>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#2C2623] tracking-tight">
+              Apa Kata Pelanggan Kami?
+            </h2>
+            <p className="text-xs sm:text-sm text-[#736D69] leading-relaxed max-w-xl">
+              Kepuasan Anda adalah resep rahasia kami. Simak ulasan jujur dari pelanggan setia {settings.restoName} atau bagikan pengalaman kuliner Anda.
+            </p>
+          </div>
+
+          {/* Tombol Buka Modal Tulis Ulasan */}
+          <button
+            onClick={() => setIsReviewModalOpen(true)}
+            className="bg-[#8E3B24] hover:bg-[#78301B] text-white px-6 py-3 rounded-full text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center gap-2 shrink-0 cursor-pointer"
+          >
+            <span>✍️</span>
+            <span>Tulis Ulasan Anda</span>
+          </button>
+        </div>
+
+        {featuredReviews.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-[#E5DEC9] text-[#736D69] text-xs sm:text-sm">
+            Belum ada ulasan pilihan yang ditampilkan. Jadilah yang pertama memberikan ulasan!
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {featuredReviews.map((review) => (
+              <div key={review.id} className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E5DEC9] shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+                <div className="space-y-4">
+                  <div className="flex text-amber-400 text-lg">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <span key={i}>{i < review.rating ? '★' : '☆'}</span>
+                    ))}
+                  </div>
+                  <p className="text-sm text-[#524D4A] leading-relaxed italic">
+                    "{review.comment}"
+                  </p>
+                </div>
+                <div className="pt-4 border-t border-[#F2EDE4] flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#8E3B24] text-white font-bold flex items-center justify-center text-sm shadow-xs shrink-0">
+                    {review.customer_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-[#2C2623]">{review.customer_name}</h4>
+                    <p className="text-[11px] text-[#736D69] font-medium line-clamp-1">Favorit: {review.ordered_menu}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* MODAL FORM TULIS ULASAN UNTUK USER */}
+      {isReviewModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 border border-[#E5DEC9] shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b pb-4 border-[#E5DEC9]">
+              <div>
+                <h3 className="font-black text-lg text-[#2C2623]">
+                  Bagikan Ulasan Anda
+                </h3>
+                <p className="text-xs text-[#736D69] mt-0.5">
+                  Pendapat Anda sangat berharga bagi peningkatan mutu {settings.restoName}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsReviewModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 font-bold text-sm p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {submitSuccess ? (
+              <div className="py-8 text-center space-y-2">
+                <span className="text-4xl block">🎉</span>
+                <h4 className="font-black text-base text-[#2C2623]">Terima Kasih Atas Ulasan Anda!</h4>
+                <p className="text-xs text-[#736D69]">
+                  Ulasan Anda telah tersimpan dan akan ditinjau oleh pengelola resto.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitNewReview} className="space-y-4">
+                {/* Rating Bintang */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#554F4C] block">
+                    Rating Kepuasan <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-2 text-2xl cursor-pointer">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setFormReview({ ...formReview, rating: star })}
+                        className="transition-transform hover:scale-110 focus:outline-none"
+                      >
+                        <span className={star <= formReview.rating ? 'text-amber-400' : 'text-gray-300'}>
+                          ★
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Nama Pelanggan */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#554F4C] block">
+                    Nama Anda <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Budi Santoso"
+                    value={formReview.customerName}
+                    onChange={(e) => setFormReview({ ...formReview, customerName: e.target.value })}
+                    className="w-full bg-[#FAF8F5] border border-[#E5DEC9] rounded-xl px-3.5 py-2.5 text-xs font-medium text-[#2C2623] focus:outline-none focus:ring-2 focus:ring-[#8E3B24]"
+                  />
+                </div>
+
+                {/* Menu yang Dipesan */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#554F4C] block">
+                    Menu yang Dipesan / Ditiptip (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Nasi Rendang Sapi & Es Teh"
+                    value={formReview.orderedMenu}
+                    onChange={(e) => setFormReview({ ...formReview, orderedMenu: e.target.value })}
+                    className="w-full bg-[#FAF8F5] border border-[#E5DEC9] rounded-xl px-3.5 py-2.5 text-xs font-medium text-[#2C2623] focus:outline-none focus:ring-2 focus:ring-[#8E3B24]"
+                  />
+                </div>
+
+                {/* Isi Ulasan */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#554F4C] block">
+                    Ulasan / Pengalaman Makan <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    rows={4}
+                    required
+                    placeholder="Ceritakan cita rasa makanan, kebersihan, atau pelayanan yang Anda rasakan..."
+                    value={formReview.comment}
+                    onChange={(e) => setFormReview({ ...formReview, comment: e.target.value })}
+                    className="w-full bg-[#FAF8F5] border border-[#E5DEC9] rounded-xl p-3.5 text-xs font-medium text-[#2C2623] focus:outline-none focus:ring-2 focus:ring-[#8E3B24] resize-none"
+                  />
+                </div>
+
+                {/* Submit Buttons */}
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E5DEC9]">
+                  <button
+                    type="button"
+                    onClick={() => setIsReviewModalOpen(false)}
+                    className="px-5 py-2.5 rounded-full border border-gray-300 text-xs font-bold text-[#554F4C] hover:bg-gray-100 transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingReview}
+                    className="px-6 py-2.5 rounded-full bg-[#8E3B24] hover:bg-[#78301B] text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSubmittingReview ? 'Mengirim...' : 'Kirim Ulasan'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* FILOSOFI / TENTANG KAMI */}
       <section id="about" className="bg-[#F2EDE4] py-14 sm:py-18 px-6 border-t border-[#E5DEC9] scroll-mt-10">
