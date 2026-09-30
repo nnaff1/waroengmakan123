@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F7F2EB;
+  --foreground: #2A2F23;
+  --palette-sage: #8B9A6E;
+  --palette-ivory: #F7F2EB;
+  --palette-oat: #EAE2D6;
+  --palette-neutral: #EEEEEE;
 }
 
 @theme inline {
@@ -12,8 +16,28 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@keyframes arrivalPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(139, 154, 110, 0.45);
+  }
+  40% {
+    box-shadow: 0 0 0 8px rgba(139, 154, 110, 0.18), 0 12px 36px -4px rgba(139, 154, 110, 0.15);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(139, 154, 110, 0);
+  }
+}
+
+.section-arrival-glow {
+  animation: arrivalPulse 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

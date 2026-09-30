@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Image from 'next/image';
+import { scrollToElement } from '@/lib/smoothScroll';
 
 type HeroProps = {
   operatingHours?: { open: string; close: string };
@@ -8,6 +9,16 @@ type HeroProps = {
 };
 
 export default function Hero({ operatingHours, restoName = 'WaroengMakan123', address }: HeroProps) {
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Format jam buka tanpa detik (misal '10:00:00' -> '10:00')
   const openTime = (operatingHours?.open || '10:00').slice(0, 5);
   const closeTime = (operatingHours?.close || '21:00').slice(0, 5);
@@ -28,85 +39,126 @@ export default function Hero({ operatingHours, restoName = 'WaroengMakan123', ad
   }, [openTime, closeTime]);
 
   return (
-    <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-16 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-      <div className="lg:col-span-6 space-y-6">
-        {/* Status Jam Buka */}
-        <div className="inline-flex items-center gap-2.5 bg-[#EAE5D8]/80 border border-[#DCD5C3] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#463F3A]">
-          <span className={`w-2.5 h-2.5 rounded-full ${isOpen ? 'bg-[#4E6148] animate-pulse' : 'bg-amber-600'}`} />
-          {isOpen ? (
-            <span>Buka Hari Ini: <strong className="text-[#2C2623]">{openTime} - {closeTime} WIB</strong></span>
-          ) : (
-            <span>Tutup Sementara • Buka Pukul <strong className="text-[#2C2623]">{openTime} WIB</strong></span>
-          )}
-        </div>
-
-        {/* Headline Prasmanan */}
-        <div className="space-y-3">
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] text-[#2C2623]">
-            Sensasi Prasmanan Nusantara, <br />
-            <span className="text-[#8E3B24]">Bebas Pilih Sesuka Hati.</span>
-          </h1>
-          <p className="text-[#6C6663] text-sm sm:text-base leading-relaxed max-w-xl">
-            Ambil piringmu dan tentukan sendiri kombinasi lauk pauk favoritmu di <strong className="text-[#2C2623]">{restoName}</strong>. 
-            Diracik setiap hari dengan rempah autentik Nusantara, higienis, dan harga bersahabat.
-          </p>
-        </div>
-
-        {/* CTA Buttons */}
-        <div className="flex flex-wrap items-center gap-3.5 pt-1">
-          <a
-            href="#menu"
-            className="bg-[#8E3B24] hover:bg-[#78301B] text-white px-7 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
-          >
-            Lihat Menu Prasmanan
-          </a>
-          <a
-            href="#katering"
-            className="bg-[#4E6148] hover:bg-[#3D4D38] text-white px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
-          >
-            <span>📦</span>
-            Pesanan Katering & Nasi Box
-          </a>
-        </div>
-
-        {/* Mini Badges */}
-        <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#E5DEC9]/80">
-          <div>
-            <span className="block text-base sm:text-lg font-black text-[#2C2623]">100% Halal</span>
-            <span className="text-[11px] text-[#736D69] font-medium">Bahan Segar Alami</span>
-          </div>
-          <div>
-            <span className="block text-base sm:text-lg font-black text-[#4E6148]">Prasmanan</span>
-            <span className="text-[11px] text-[#736D69] font-medium">Ambil Sendiri Laukmu</span>
-          </div>
-          <div>
-            <span className="block text-base sm:text-lg font-black text-[#8E3B24]">4.9 / 5.0</span>
-            <span className="text-[11px] text-[#736D69] font-medium">1.200+ Ulasan Puas</span>
-          </div>
-        </div>
+    <section className="relative isolate overflow-hidden w-full py-12 sm:py-18 md:py-24 border-b border-[#EAE2D6] bg-[#F7F2EB]">
+      {/* LATAR BELAKANG GAMBAR MENU MAKANAN (OPASITAS 80% & PARALLAX SCROLL DEPTH) */}
+      <div
+        className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none will-change-transform transition-transform duration-75 ease-out"
+        style={{ transform: `translate3d(0, ${Math.min(scrollY * 0.22, 120)}px, 0)` }}
+      >
+        <Image
+          src="/hero-bg.jpg"
+          alt="Latar Belakang Menu Prasmanan"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center scale-110 filter blur-[6px] opacity-80 contrast-[1.04] brightness-[0.98] transform-gpu"
+        />
+        {/* Layer Overlay: lembut & hangat agar makanan lezat terlihat jelas di sisi kanan & teks terbaca tajam di sisi kiri */}
+        <div className="absolute inset-0 bg-[#F7F2EB]/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F7F2EB]/95 via-[#F7F2EB]/65 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F7F2EB]/60 via-transparent to-[#F7F2EB]" />
       </div>
 
-      {/* Visual Image */}
-      <div className="lg:col-span-6 relative">
-        <div className="relative rounded-3xl overflow-hidden shadow-xl aspect-[4/3] w-full border-4 border-white bg-neutral-100">
-          <Image
-            src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=80"
-            alt="Sajian Prasmanan WaroengMakan123"
-            fill
-            priority
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover hover:scale-103 transition-transform duration-500"
-          />
-          <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-lg flex items-center justify-between border border-[#E5DEC9]">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#4E6148]" />
-              <span className="text-xs font-bold text-[#2C2623]">Prasmanan Fresh Dari Dapur</span>
-            </div>
-            {address && (
-              <span className="text-[11px] text-[#736D69] font-medium hidden sm:inline truncate max-w-[200px]">
-                📍 {address}
-              </span>
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center relative z-10">
+        <div className="lg:col-span-6 space-y-6">
+          {/* Status Jam Buka */}
+          <div className="inline-flex items-center gap-2.5 bg-white/90 backdrop-blur-md border border-[#EAE2D6] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#2A2F23] shadow-xs">
+            <span className={`w-2.5 h-2.5 rounded-full ${isOpen ? 'bg-[#8B9A6E] animate-pulse' : 'bg-amber-600'}`} />
+            {isOpen ? (
+              <span>Buka Hari Ini: <strong className="text-[#2A2F23]">{openTime} - {closeTime} WIB</strong></span>
+            ) : (
+              <span>Tutup Sementara • Buka Pukul <strong className="text-[#2A2F23]">{openTime} WIB</strong></span>
             )}
+          </div>
+
+          {/* Headline Prasmanan */}
+          <div className="space-y-3">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] text-[#2A2F23]">
+              Sensasi Prasmanan Nusantara, <br />
+              <span className="text-[#8B9A6E]">Bebas Pilih Sesuka Hati.</span>
+            </h1>
+            <p className="text-[#5C6353] text-sm sm:text-base leading-relaxed max-w-xl font-medium">
+              Ambil piringmu dan tentukan sendiri kombinasi lauk pauk favoritmu di <strong className="text-[#2A2F23] font-bold">{restoName}</strong>. 
+              Diracik setiap hari dengan rempah autentik Nusantara, higienis, dan harga bersahabat.
+            </p>
+          </div>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-wrap items-center gap-3.5 pt-1">
+            <a
+              href="#menu"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToElement('menu', { highlight: true });
+              }}
+              className="bg-[#8B9A6E] hover:bg-[#728157] text-white px-7 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer"
+            >
+              Lihat Menu Prasmanan
+            </a>
+            <a
+              href="#katering"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToElement('katering', { highlight: true });
+              }}
+              className="bg-[#EAE2D6] hover:bg-[#DDD4C7] text-[#2A2F23] border border-[#D5C9B7] px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all shadow-xs hover:shadow-md active:scale-95 cursor-pointer flex items-center gap-1.5"
+            >
+              <span>📦</span>
+              Pesanan Katering & Nasi Box
+            </a>
+          </div>
+
+          {/* Mini Badges */}
+          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#EAE2D6]">
+            <div>
+              <span className="block text-base sm:text-lg font-black text-[#2A2F23]">100% Halal</span>
+              <span className="text-[11px] text-[#686E60] font-medium">Bahan Segar Alami</span>
+            </div>
+            <div>
+              <span className="block text-base sm:text-lg font-black text-[#8B9A6E]">Prasmanan</span>
+              <span className="text-[11px] text-[#686E60] font-medium">Ambil Sendiri Laukmu</span>
+            </div>
+            <div>
+              <span className="block text-base sm:text-lg font-black text-[#8B9A6E]">4.9 / 5.0</span>
+              <span className="text-[11px] text-[#686E60] font-medium">1.200+ Ulasan Puas</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Visual Brand Logo Showcase */}
+        <div className="lg:col-span-6 relative flex items-center justify-center">
+          {/* Subtle Ambient Backlight */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#8B9A6E]/20 via-[#EAE2D6]/40 to-transparent rounded-3xl filter blur-2xl opacity-70 pointer-events-none" />
+
+          <div className="relative rounded-3xl overflow-hidden shadow-xl aspect-[4/3] w-full border-4 border-white bg-gradient-to-br from-white via-[#FAF7F2] to-[#F7F2EB] flex flex-col items-center justify-center p-6 pb-16 sm:pb-20 group">
+            {/* Subtle decorative concentric rings */}
+            <div className="absolute w-64 h-64 sm:w-80 sm:h-80 rounded-full border border-[#EAE2D6]/70 pointer-events-none" />
+            <div className="absolute w-84 h-84 sm:w-96 sm:h-96 rounded-full border border-[#EAE2D6]/40 pointer-events-none" />
+
+            {/* Brand Logo Circular Emblem */}
+            <div className="relative w-44 h-44 sm:w-56 sm:h-56 rounded-full overflow-hidden shadow-md border-3 border-white bg-white group-hover:scale-105 transition-transform duration-500 shrink-0">
+              <Image
+                src="/logo.png"
+                alt={restoName}
+                fill
+                priority
+                sizes="(max-width: 640px) 176px, 224px"
+                className="object-contain p-2"
+              />
+            </div>
+
+            {/* Floating Info Pill at bottom */}
+            <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-md flex items-center justify-between border border-[#EAE2D6]">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#8B9A6E]" />
+                <span className="text-xs font-bold text-[#2A2F23]">Prasmanan Fresh Dari Dapur</span>
+              </div>
+              {address && (
+                <span className="text-[11px] text-[#686E60] font-medium hidden sm:inline truncate max-w-[200px]">
+                  📍 {address}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

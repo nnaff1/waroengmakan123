@@ -160,20 +160,20 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
     <section id="ai-matcher" className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 xl:px-10 py-12 scroll-mt-10">
       {/* Header */}
       <div className="text-center space-y-2 mb-10">
-        <h2 className="text-2xl sm:text-3xl xl:text-4xl font-extrabold text-[#2C2623] tracking-tight">
+        <h2 className="text-2xl sm:text-3xl xl:text-4xl font-extrabold text-[#2A2F23] tracking-tight">
           Bingung Makan Apa?
         </h2>
-        <p className="text-xs sm:text-sm text-[#6C6663]">
+        <p className="text-xs sm:text-sm text-[#5C6353]">
           Pilih preferensi rasa dan bujet, sistem kami akan memadukan menu paling cocok dari stok dapur real-time.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Form Preferensi (Kiri) */}
-        <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-[#EFECE6] shadow-xs space-y-6">
+        <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-[#EAE2D6] shadow-xs space-y-6">
           {/* 1. MOOD */}
           <div>
-            <label className="text-xs font-bold text-[#8C857E] uppercase tracking-wider block mb-2.5">
+            <label className="text-xs font-bold text-[#8B9A6E] uppercase tracking-wider block mb-2.5">
               1. KONDISI MOOD
             </label>
             <div className="flex flex-wrap gap-2">
@@ -184,8 +184,8 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
                   onClick={() => setMood(item)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     mood === item
-                      ? 'bg-[#3A4836] text-white shadow-xs'
-                      : 'bg-[#F6F4F0] text-[#6C6663] hover:text-black'
+                      ? 'bg-[#8B9A6E] text-white shadow-xs'
+                      : 'bg-[#F7F2EB] text-[#5C6353] hover:text-[#2A2F23]'
                   }`}
                 >
                   {item}
@@ -196,7 +196,7 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
 
           {/* 2. PROFIL RASA */}
           <div>
-            <label className="text-xs font-bold text-[#8C857E] uppercase tracking-wider block mb-2.5">
+            <label className="text-xs font-bold text-[#8B9A6E] uppercase tracking-wider block mb-2.5">
               2. PROFIL RASA
             </label>
             <div className="flex flex-wrap gap-2">
@@ -207,8 +207,8 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
                   onClick={() => setTaste(item)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     taste === item
-                      ? 'bg-[#3A4836] text-white shadow-xs'
-                      : 'bg-[#F6F4F0] text-[#6C6663] hover:text-black'
+                      ? 'bg-[#8B9A6E] text-white shadow-xs'
+                      : 'bg-[#F7F2EB] text-[#5C6353] hover:text-[#2A2F23]'
                   }`}
                 >
                   {item}
@@ -219,7 +219,7 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
 
           {/* 3. SUASANA WAKTU */}
           <div>
-            <label className="text-xs font-bold text-[#8C857E] uppercase tracking-wider block mb-2.5">
+            <label className="text-xs font-bold text-[#8B9A6E] uppercase tracking-wider block mb-2.5">
               3. SUASANA WAKTU
             </label>
             <div className="flex flex-wrap gap-2">
@@ -230,8 +230,8 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
                   onClick={() => setTime(item)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     time === item
-                      ? 'bg-[#3A4836] text-white shadow-xs'
-                      : 'bg-[#F6F4F0] text-[#6C6663] hover:text-black'
+                      ? 'bg-[#8B9A6E] text-white shadow-xs'
+                      : 'bg-[#F7F2EB] text-[#5C6353] hover:text-[#2A2F23]'
                   }`}
                 >
                   {item}
@@ -242,7 +242,7 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
 
           {/* 4. TARGET BUJET */}
           <div>
-            <label className="text-xs font-bold text-[#8C857E] uppercase tracking-wider block mb-2.5">
+            <label className="text-xs font-bold text-[#8B9A6E] uppercase tracking-wider block mb-2.5">
               4. TARGET BUJET
             </label>
             <div className="flex flex-wrap gap-2">
@@ -253,8 +253,8 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
                   onClick={() => setBudget(item)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     budget === item
-                      ? 'bg-[#8E3B24] text-white shadow-xs'
-                      : 'bg-[#F6F4F0] text-[#6C6663] hover:text-black'
+                      ? 'bg-[#8B9A6E] text-white shadow-xs'
+                      : 'bg-[#F7F2EB] text-[#5C6353] hover:text-[#2A2F23]'
                   }`}
                 >
                   {item}
@@ -267,7 +267,7 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
             type="button"
             onClick={handleMatchClick}
             disabled={isLoadingMenu || menuItems.length === 0}
-            className="w-full bg-[#3A4836] hover:bg-[#2D382A] disabled:bg-gray-300 text-white py-3.5 rounded-2xl text-xs sm:text-sm font-extrabold transition-all shadow-md active:scale-98 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-[#8B9A6E] hover:bg-[#728157] disabled:bg-gray-300 text-white py-3.5 rounded-2xl text-xs sm:text-sm font-extrabold transition-all shadow-md active:scale-98 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             TEMUKAN KOMBO MENU
           </button>
@@ -276,12 +276,12 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
         {/* Tampilan Hasil Kombo AI (Kanan) */}
         <div className="lg:col-span-5">
           {isLoadingMenu ? (
-            <div className="bg-white rounded-3xl p-12 text-center border border-[#EFECE6] text-[#736D69] text-xs font-semibold">
+            <div className="bg-white rounded-3xl p-12 text-center border border-[#EAE2D6] text-[#5C6353] text-xs font-semibold">
               Menganalisis menu aktif di dapur Supabase...
             </div>
           ) : matchedCombo ? (
-            <div className="bg-white rounded-3xl overflow-hidden border border-[#EFECE6] shadow-md flex flex-col justify-between">
-              <div className="relative h-56 sm:h-64 w-full bg-neutral-100">
+            <div className="bg-white rounded-3xl overflow-hidden border border-[#EAE2D6] shadow-md flex flex-col justify-between">
+              <div className="relative h-56 sm:h-64 w-full bg-[#EEEEEE]">
                 <Image
                   src={matchedCombo.image}
                   alt={matchedCombo.title}
@@ -297,31 +297,31 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
 
               <div className="p-6 space-y-4">
                 <div className="flex justify-between items-start">
-                  <h3 className="font-extrabold text-base sm:text-lg text-[#2C2623] leading-snug">
+                  <h3 className="font-extrabold text-base sm:text-lg text-[#2A2F23] leading-snug">
                     {matchedCombo.title}
                   </h3>
                   <button
                     type="button"
                     onClick={handleMatchClick}
-                    className="text-xs font-bold text-[#8E3B24] hover:underline shrink-0 ml-2 cursor-pointer"
+                    className="text-xs font-bold text-[#8B9A6E] hover:underline shrink-0 ml-2 cursor-pointer"
                   >
                     Acak Lain
                   </button>
                 </div>
 
-                <div className="bg-[#FAF8F5] border border-[#EFECE6] p-4 rounded-2xl space-y-1">
-                  <span className="text-[10px] font-bold text-[#4E6148] uppercase tracking-wider block">
+                <div className="bg-[#F7F2EB] border border-[#EAE2D6] p-4 rounded-2xl space-y-1">
+                  <span className="text-[10px] font-bold text-[#8B9A6E] uppercase tracking-wider block">
                     CATATAN:
                   </span>
-                  <p className="text-xs text-[#6C6663] italic leading-relaxed">
+                  <p className="text-xs text-[#5C6353] italic leading-relaxed">
                     &quot;{matchedCombo.rationale}&quot;
                   </p>
                 </div>
 
-                <div className="pt-2 flex items-center justify-between border-t border-[#F0ECE6]">
+                <div className="pt-2 flex items-center justify-between border-t border-[#EAE2D6]/50">
                   <div>
-                    <span className="text-[10px] font-bold text-[#8C857E] uppercase block">Harga Kombo</span>
-                    <span className="text-lg font-black text-[#8E3B24]">
+                    <span className="text-[10px] font-bold text-[#8A9182] uppercase block">Harga Kombo</span>
+                    <span className="text-lg font-black text-[#8B9A6E]">
                       Rp {matchedCombo.totalPrice.toLocaleString('id-ID')}
                     </span>
                   </div>
@@ -329,7 +329,7 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
                   <button
                     type="button"
                     onClick={handleAddComboToCart}
-                    className="bg-[#8E3B24] hover:bg-[#78301B] text-white px-5 py-2.5 rounded-full text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
+                    className="bg-[#8B9A6E] hover:bg-[#728157] text-white px-5 py-2.5 rounded-full text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
                   >
                     + Tambah Kombo
                   </button>
@@ -337,7 +337,7 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-3xl p-12 text-center border border-[#EFECE6] text-[#736D69] text-xs font-semibold">
+            <div className="bg-white rounded-3xl p-12 text-center border border-[#EAE2D6] text-[#5C6353] text-xs font-semibold">
               Belum ada menu yang tersedia di dapur.
             </div>
           )}

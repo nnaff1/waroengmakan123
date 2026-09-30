@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 const ADMIN_SECRET_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN || '2026';
@@ -101,10 +102,14 @@ export default function AdminLayout({
     return (
       <div className="min-h-screen bg-[#F6F2EC] flex items-center justify-center p-6 text-[#2C2623] font-sans">
         <div className="bg-white max-w-sm w-full p-8 rounded-3xl border border-[#EFECE6] shadow-xl text-center space-y-6">
-          <div className="w-14 h-14 rounded-2xl bg-[#8E3B24]/10 text-[#8E3B24] flex items-center justify-center mx-auto">
-            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+          <div className="relative w-16 h-16 rounded-full overflow-hidden shadow-md mx-auto border-2 border-[#8E3B24]/20">
+            <Image
+              src="/logo.png"
+              alt="WaroengMakan123"
+              fill
+              sizes="64px"
+              className="object-cover"
+            />
           </div>
           <div>
             <h2 className="text-xl font-black text-[#2C2623]">Akses Terbatas</h2>
@@ -155,9 +160,20 @@ export default function AdminLayout({
       {/* SIDEBAR DESKTOP */}
       <aside className="hidden md:flex w-64 bg-[#F2EDE4] p-6 flex-col justify-between border-r border-[#E5DEC9] shrink-0 min-h-screen">
         <div className="space-y-6">
-          <Link href="/" className="block">
-            <h1 className="text-xl font-bold text-[#8E3B24] tracking-tight">WaroengMakan123</h1>
-            <p className="text-xs text-[#736D69] font-medium">Admin Console</p>
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="relative w-10 h-10 rounded-full overflow-hidden shadow-xs border border-[#8E3B24]/20 group-hover:scale-105 transition-transform shrink-0">
+              <Image
+                src="/logo.png"
+                alt="WaroengMakan123"
+                fill
+                sizes="40px"
+                className="object-cover"
+              />
+            </div>
+            <div>
+              <h1 className="text-base font-black text-[#8E3B24] tracking-tight leading-tight">WaroengMakan123</h1>
+              <p className="text-[10px] text-[#736D69] font-bold uppercase tracking-wider">Admin Console</p>
+            </div>
           </Link>
 
           <nav className="space-y-1.5 text-xs font-semibold text-[#524D4A]">
@@ -204,9 +220,20 @@ export default function AdminLayout({
           <aside className="relative w-72 h-full bg-[#F2EDE4] p-6 flex flex-col justify-between border-r border-[#E5DEC9] overflow-y-auto">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <Link href="/" onClick={() => setIsMobileSidebarOpen(false)}>
-                  <h1 className="text-xl font-bold text-[#8E3B24] tracking-tight">WaroengMakan123</h1>
-                  <p className="text-xs text-[#736D69] font-medium">Admin Console</p>
+                <Link href="/" onClick={() => setIsMobileSidebarOpen(false)} className="flex items-center gap-3">
+                  <div className="relative w-9 h-9 rounded-full overflow-hidden shadow-xs border border-[#8E3B24]/20 shrink-0">
+                    <Image
+                      src="/logo.png"
+                      alt="WaroengMakan123"
+                      fill
+                      sizes="36px"
+                      className="object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h1 className="text-base font-black text-[#8E3B24] tracking-tight leading-tight">WaroengMakan123</h1>
+                    <p className="text-[10px] text-[#736D69] font-bold uppercase tracking-wider">Admin Console</p>
+                  </div>
                 </Link>
                 <button onClick={() => setIsMobileSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-[#E4DCCF]">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -271,13 +298,24 @@ export default function AdminLayout({
               </svg>
             </button>
 
-            <div>
-              <h2 className="text-sm font-black text-[#2C2623] tracking-tight uppercase">
-                Admin Portal
-              </h2>
-              <p className="text-[10px] text-[#736D69] font-medium hidden sm:block">
-                WaroengMakan123 Console
-              </p>
+            <div className="flex items-center gap-2.5">
+              <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-xs border border-[#8E3B24]/20 shrink-0 md:hidden">
+                <Image
+                  src="/logo.png"
+                  alt="WaroengMakan123"
+                  fill
+                  sizes="32px"
+                  className="object-cover"
+                />
+              </div>
+              <div>
+                <h2 className="text-sm font-black text-[#2C2623] tracking-tight uppercase">
+                  Admin Portal
+                </h2>
+                <p className="text-[10px] text-[#736D69] font-medium hidden sm:block">
+                  WaroengMakan123 Console
+                </p>
+              </div>
             </div>
 
             <div className="hidden sm:block h-5 w-[1px] bg-[#E5DEC9]" />

@@ -318,9 +318,18 @@ export default function KasirPage() {
             </svg>
           </Link>
           <div className="h-4 w-px bg-[#4A4340]" />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="relative w-7 h-7 rounded-full overflow-hidden shadow-xs border border-white/20 shrink-0">
+              <Image
+                src="/logo.png"
+                alt="WaroengMakan123"
+                fill
+                sizes="28px"
+                className="object-cover"
+              />
+            </div>
             <span className="text-white font-black tracking-tight text-sm">WaroengMakan123</span>
-            <span className="text-[10px] font-bold text-[#8E3B24] bg-[#8E3B24]/20 px-2 py-0.5 rounded-md uppercase tracking-wider">Kasir</span>
+            <span className="text-[10px] font-bold text-[#E56A44] bg-[#8E3B24]/40 px-2 py-0.5 rounded-md uppercase tracking-wider">Kasir</span>
           </div>
         </div>
 
