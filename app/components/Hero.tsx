@@ -39,7 +39,7 @@ export default function Hero({ operatingHours, restoName = 'WaroengMakan123', ad
   }, [openTime, closeTime]);
 
   return (
-    <section className="relative isolate overflow-hidden w-full py-12 sm:py-18 md:py-24 border-b border-[#EAE2D6] bg-[#F7F2EB]">
+    <section className="relative isolate overflow-hidden w-full py-12 sm:py-18 md:py-24 border-b border-[#F3E6D5] bg-[#FFF9F2]">
       {/* LATAR BELAKANG GAMBAR MENU MAKANAN (OPASITAS 80% & PARALLAX SCROLL DEPTH) */}
       <div
         className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none will-change-transform transition-transform duration-75 ease-out"
@@ -53,32 +53,32 @@ export default function Hero({ operatingHours, restoName = 'WaroengMakan123', ad
           sizes="100vw"
           className="object-cover object-center scale-110 filter blur-[6px] opacity-80 contrast-[1.04] brightness-[0.98] transform-gpu"
         />
-        {/* Layer Overlay: lembut & hangat agar makanan lezat terlihat jelas di sisi kanan & teks terbaca tajam di sisi kiri */}
-        <div className="absolute inset-0 bg-[#F7F2EB]/30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#F7F2EB]/95 via-[#F7F2EB]/65 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F7F2EB]/60 via-transparent to-[#F7F2EB]" />
+        {/* Layer Overlay: hangat & elegan agar makanan lezat terlihat jelas di sisi kanan & teks terbaca tajam di sisi kiri */}
+        <div className="absolute inset-0 bg-[#FFF9F2]/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#FFF9F2]/95 via-[#FFF9F2]/65 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FFF9F2]/60 via-transparent to-[#FFF9F2]" />
       </div>
 
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center relative z-10">
         <div className="lg:col-span-6 space-y-6">
           {/* Status Jam Buka */}
-          <div className="inline-flex items-center gap-2.5 bg-white/90 backdrop-blur-md border border-[#EAE2D6] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#2A2F23] shadow-xs">
-            <span className={`w-2.5 h-2.5 rounded-full ${isOpen ? 'bg-[#8B9A6E] animate-pulse' : 'bg-amber-600'}`} />
+          <div className="inline-flex items-center gap-2.5 bg-white/90 backdrop-blur-md border border-[#F3E6D5] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#2D151B] shadow-xs">
+            <span className={`w-2.5 h-2.5 rounded-full ${isOpen ? 'bg-[#800020] animate-pulse' : 'bg-[#D45060]'}`} />
             {isOpen ? (
-              <span>Buka Hari Ini: <strong className="text-[#2A2F23]">{openTime} - {closeTime} WIB</strong></span>
+              <span>Buka Hari Ini: <strong className="text-[#2D151B]">{openTime} - {closeTime} WIB</strong></span>
             ) : (
-              <span>Tutup Sementara • Buka Pukul <strong className="text-[#2A2F23]">{openTime} WIB</strong></span>
+              <span>Tutup Sementara • Buka Pukul <strong className="text-[#2D151B]">{openTime} WIB</strong></span>
             )}
           </div>
 
           {/* Headline Prasmanan */}
           <div className="space-y-3">
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] text-[#2A2F23]">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] text-[#2D151B]">
               Sensasi Prasmanan Nusantara, <br />
-              <span className="text-[#8B9A6E]">Bebas Pilih Sesuka Hati.</span>
+              <span className="text-[#800020]">Bebas Pilih Sesuka Hati.</span>
             </h1>
-            <p className="text-[#5C6353] text-sm sm:text-base leading-relaxed max-w-xl font-medium">
-              Ambil piringmu dan tentukan sendiri kombinasi lauk pauk favoritmu di <strong className="text-[#2A2F23] font-bold">{restoName}</strong>. 
+            <p className="text-[#735A60] text-sm sm:text-base leading-relaxed max-w-xl font-medium">
+              Ambil piringmu dan tentukan sendiri kombinasi lauk pauk favoritmu di <strong className="text-[#2D151B] font-bold">{restoName}</strong>. 
               Diracik setiap hari dengan rempah autentik Nusantara, higienis, dan harga bersahabat.
             </p>
           </div>
@@ -89,9 +89,9 @@ export default function Hero({ operatingHours, restoName = 'WaroengMakan123', ad
               href="#menu"
               onClick={(e) => {
                 e.preventDefault();
-                scrollToElement('menu', { highlight: true });
+                scrollToElement('menu');
               }}
-              className="bg-[#8B9A6E] hover:bg-[#728157] text-white px-7 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer"
+              className="bg-[#800020] hover:bg-[#66001A] text-white px-7 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer"
             >
               Lihat Menu Prasmanan
             </a>
@@ -99,9 +99,9 @@ export default function Hero({ operatingHours, restoName = 'WaroengMakan123', ad
               href="#katering"
               onClick={(e) => {
                 e.preventDefault();
-                scrollToElement('katering', { highlight: true });
+                scrollToElement('katering');
               }}
-              className="bg-[#EAE2D6] hover:bg-[#DDD4C7] text-[#2A2F23] border border-[#D5C9B7] px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all shadow-xs hover:shadow-md active:scale-95 cursor-pointer flex items-center gap-1.5"
+              className="bg-[#F3E6D5] hover:bg-[#E5D3BE] text-[#2D151B] border border-[#E5D3BE] px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all shadow-xs hover:shadow-md active:scale-95 cursor-pointer flex items-center gap-1.5"
             >
               <span>📦</span>
               Pesanan Katering & Nasi Box
@@ -109,18 +109,18 @@ export default function Hero({ operatingHours, restoName = 'WaroengMakan123', ad
           </div>
 
           {/* Mini Badges */}
-          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#EAE2D6]">
+          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#F3E6D5]">
             <div>
-              <span className="block text-base sm:text-lg font-black text-[#2A2F23]">100% Halal</span>
-              <span className="text-[11px] text-[#686E60] font-medium">Bahan Segar Alami</span>
+              <span className="block text-base sm:text-lg font-black text-[#2D151B]">100% Halal</span>
+              <span className="text-[11px] text-[#735A60] font-medium">Bahan Segar Alami</span>
             </div>
             <div>
-              <span className="block text-base sm:text-lg font-black text-[#8B9A6E]">Prasmanan</span>
-              <span className="text-[11px] text-[#686E60] font-medium">Ambil Sendiri Laukmu</span>
+              <span className="block text-base sm:text-lg font-black text-[#800020]">Prasmanan</span>
+              <span className="text-[11px] text-[#735A60] font-medium">Ambil Sendiri Laukmu</span>
             </div>
             <div>
-              <span className="block text-base sm:text-lg font-black text-[#8B9A6E]">4.9 / 5.0</span>
-              <span className="text-[11px] text-[#686E60] font-medium">1.200+ Ulasan Puas</span>
+              <span className="block text-base sm:text-lg font-black text-[#800020]">4.9 / 5.0</span>
+              <span className="text-[11px] text-[#735A60] font-medium">1.200+ Ulasan Puas</span>
             </div>
           </div>
         </div>
@@ -128,15 +128,20 @@ export default function Hero({ operatingHours, restoName = 'WaroengMakan123', ad
         {/* Visual Brand Logo Showcase */}
         <div className="lg:col-span-6 relative flex items-center justify-center">
           {/* Subtle Ambient Backlight */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#8B9A6E]/20 via-[#EAE2D6]/40 to-transparent rounded-3xl filter blur-2xl opacity-70 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#800020]/25 via-[#D45060]/15 to-transparent rounded-3xl filter blur-3xl opacity-70 pointer-events-none" />
 
-          <div className="relative rounded-3xl overflow-hidden shadow-xl aspect-[4/3] w-full border-4 border-white bg-gradient-to-br from-white via-[#FAF7F2] to-[#F7F2EB] flex flex-col items-center justify-center p-6 pb-16 sm:pb-20 group">
+          {/* Black Glass Card Container (50% Opacity) */}
+          <div className="relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/3] w-full border border-white/25 bg-black/50 backdrop-blur-xl flex flex-col items-center justify-center p-6 pb-16 sm:pb-20 group">
+            {/* Top glass reflection line */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none" />
+
             {/* Subtle decorative concentric rings */}
-            <div className="absolute w-64 h-64 sm:w-80 sm:h-80 rounded-full border border-[#EAE2D6]/70 pointer-events-none" />
-            <div className="absolute w-84 h-84 sm:w-96 sm:h-96 rounded-full border border-[#EAE2D6]/40 pointer-events-none" />
+            <div className="absolute w-64 h-64 sm:w-80 sm:h-80 rounded-full border border-white/15 pointer-events-none" />
+            <div className="absolute w-84 h-84 sm:w-96 sm:h-96 rounded-full border border-white/10 pointer-events-none" />
 
             {/* Brand Logo Circular Emblem */}
-            <div className="relative w-44 h-44 sm:w-56 sm:h-56 rounded-full overflow-hidden shadow-md border-3 border-white bg-white group-hover:scale-105 transition-transform duration-500 shrink-0">
+            <div className="relative w-44 h-44 sm:w-56 sm:h-56 rounded-full overflow-hidden shadow-2xl border-4 border-white/90 bg-white group-hover:scale-105 transition-transform duration-500 shrink-0 ring-4 ring-white/10">
               <Image
                 src="/logo.png"
                 alt={restoName}
@@ -148,14 +153,17 @@ export default function Hero({ operatingHours, restoName = 'WaroengMakan123', ad
             </div>
 
             {/* Floating Info Pill at bottom */}
-            <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-md flex items-center justify-between border border-[#EAE2D6]">
+            <div className="absolute bottom-4 left-4 right-4 bg-black/50 backdrop-blur-xl p-3.5 rounded-2xl shadow-lg flex items-center justify-between border border-white/20">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#8B9A6E]" />
-                <span className="text-xs font-bold text-[#2A2F23]">Prasmanan Fresh Dari Dapur</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#D45060] shadow-[0_0_8px_#D45060] animate-pulse" />
+                <span className="text-xs font-bold text-white tracking-wide">Prasmanan Fresh Dari Dapur</span>
               </div>
               {address && (
-                <span className="text-[11px] text-[#686E60] font-medium hidden sm:inline truncate max-w-[200px]">
-                  📍 {address}
+                <span className="inline-flex items-center gap-1.5 text-[11px] text-[#F3E6D5] font-medium hidden sm:inline-flex truncate max-w-[210px]">
+                  <svg className="w-3.5 h-3.5 text-[#D45060] shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                  </svg>
+                  <span className="truncate">{address}</span>
                 </span>
               )}
             </div>

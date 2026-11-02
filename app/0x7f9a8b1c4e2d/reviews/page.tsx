@@ -363,8 +363,11 @@ export default function CustomerReviewsPage() {
               {item.reply ? (
                 <div className="bg-[#F8F6F2] rounded-2xl p-4 xl:p-5 border border-[#E5DEC9] space-y-1.5 mt-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] xl:text-xs font-bold text-[#8E3B24]">
-                      💬 Balasan dari WaroengMakan123
+                    <span className="text-[11px] xl:text-xs font-bold text-[#8E3B24] flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+                      </svg>
+                      Balasan dari WaroengMakan123
                     </span>
                     <span className="text-[10px] xl:text-xs text-[#736D69]">{item.repliedAt}</span>
                   </div>
@@ -384,7 +387,10 @@ export default function CustomerReviewsPage() {
                     onClick={() => handleOpenReplyModal(item)}
                     className="bg-[#4E6148] hover:bg-[#3F503A] text-white text-xs xl:text-sm font-bold px-5 xl:px-6 py-2 xl:py-2.5 rounded-full transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                   >
-                    <span>💬</span> Balas Ulasan
+                    <svg className="w-3.5 h-3.5 fill-none stroke-current" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <span>Balas Ulasan</span>
                   </button>
                 </div>
               )}
@@ -419,9 +425,12 @@ export default function CustomerReviewsPage() {
                   type="button"
                   onClick={handleGenerateAiReply}
                   disabled={isGeneratingAi}
-                  className="text-xs font-bold text-[#4E6148] bg-[#EAEFE8] px-3 py-1 rounded-full cursor-pointer hover:bg-[#D8E4D5] transition-colors"
+                  className="text-xs font-bold text-[#4E6148] bg-[#EAEFE8] px-3 py-1.5 rounded-full cursor-pointer hover:bg-[#D8E4D5] transition-colors flex items-center gap-1.5"
                 >
-                  {isGeneratingAi ? 'Membuat AI...' : '✨ Auto-Generate AI'}
+                  <svg className="w-3.5 h-3.5 fill-none stroke-current" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span>{isGeneratingAi ? 'Membuat AI...' : 'Auto-Generate AI'}</span>
                 </button>
               </div>
               <textarea

@@ -1,11 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #F7F2EB;
-  --foreground: #2A2F23;
-  --palette-sage: #8B9A6E;
-  --palette-ivory: #F7F2EB;
-  --palette-oat: #EAE2D6;
+  --background: #FFF9F2;
+  --foreground: #2D151B;
+  --palette-burgundy: #800020;
+  --palette-rose: #D45060;
+  --palette-cream: #F3E6D5;
+  --palette-ivory: #FFF9F2;
   --palette-neutral: #EEEEEE;
 }
 
@@ -28,16 +29,26 @@ body {
 
 @keyframes arrivalPulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(139, 154, 110, 0.45);
+    box-shadow: 0 0 0 0 rgba(128, 0, 32, 0.4);
   }
   40% {
-    box-shadow: 0 0 0 8px rgba(139, 154, 110, 0.18), 0 12px 36px -4px rgba(139, 154, 110, 0.15);
+    box-shadow: 0 0 0 8px rgba(212, 80, 96, 0.18), 0 12px 36px -4px rgba(128, 0, 32, 0.15);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(139, 154, 110, 0);
+    box-shadow: 0 0 0 0 rgba(128, 0, 32, 0);
   }
 }
 
 .section-arrival-glow {
   animation: arrivalPulse 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.animate-shake {
+  animation: shake 0.35s ease-in-out;
 }

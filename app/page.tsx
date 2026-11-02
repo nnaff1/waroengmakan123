@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Footer from './components/Footer';
 import ScrollReveal from './components/ScrollReveal';
+import ChatbotButton from './components/ChatbotButton';
 import { MenuItem } from './data';
 import { supabase } from '@/lib/supabaseClient';
 import { scrollToElement } from '@/lib/smoothScroll';
@@ -226,7 +227,7 @@ export default function LandingPage() {
   }, [menuItems, activeCategory, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-[#F7F2EB] text-[#2A2F23] font-sans antialiased flex flex-col selection:bg-[#8B9A6E] selection:text-white">
+    <div className="min-h-screen bg-[#FFF9F2] text-[#2D151B] font-sans antialiased flex flex-col selection:bg-[#800020] selection:text-white">
       {/* NAVBAR */}
       <Navbar restoName={settings.restoName} phone={settings.phone} />
 
@@ -242,14 +243,14 @@ export default function LandingPage() {
         <ScrollReveal direction="up">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-5">
             <div>
-              <div className="inline-flex items-center gap-2 text-xs font-bold text-[#8B9A6E] uppercase tracking-wider mb-1">
-                <span className="w-2 h-2 rounded-full bg-[#8B9A6E]" />
+              <div className="inline-flex items-center gap-2 text-xs font-bold text-[#800020] uppercase tracking-wider mb-1">
+                <span className="w-2 h-2 rounded-full bg-[#800020]" />
                 Display Sajian Hari Ini
               </div>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#2A2F23] tracking-tight">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#2D151B] tracking-tight">
                 Katalog Pilihan Prasmanan
               </h2>
-              <p className="text-xs sm:text-sm text-[#5C6353] mt-1 max-w-lg">
+              <p className="text-xs sm:text-sm text-[#735A60] mt-1 max-w-lg">
                 Dimasak segar setiap pagi dengan bumbu rempah Nusantara autentik. Pilihan lauk dan sayur fresh yang siap disajikan langsung di etalase kami.
               </p>
             </div>
@@ -260,9 +261,9 @@ export default function LandingPage() {
                 placeholder="Cari lauk, sayur, minuman..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white border border-[#EAE2D6] rounded-full py-2.5 pl-10 pr-4 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#8B9A6E] placeholder-[#8A9182] shadow-xs"
+                className="w-full bg-white border border-[#F3E6D5] rounded-full py-2.5 pl-10 pr-4 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#800020] placeholder-[#A89297] shadow-xs"
               />
-              <svg className="w-4 h-4 text-[#8A9182] absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-[#A89297] absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -280,8 +281,8 @@ export default function LandingPage() {
                   onClick={() => setActiveCategory(cat)}
                   className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-[#8B9A6E] text-white shadow-xs'
-                      : 'bg-white text-[#5C6353] border border-[#EAE2D6] hover:bg-[#EAE2D6]/50'
+                      ? 'bg-[#800020] text-white shadow-xs'
+                      : 'bg-white text-[#735A60] border border-[#F3E6D5] hover:bg-[#F3E6D5]/50'
                   }`}
                 >
                   {cat}
@@ -292,14 +293,14 @@ export default function LandingPage() {
         </ScrollReveal>
 
         {isLoadingMenu ? (
-          <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-[#EAE2D6]">
-            <div className="w-10 h-10 border-3 border-[#8B9A6E] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-xs sm:text-sm text-[#5C6353] font-semibold">Menyiapkan hidangan lezat dari dapur...</p>
+          <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-[#F3E6D5]">
+            <div className="w-10 h-10 border-3 border-[#800020] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-xs sm:text-sm text-[#735A60] font-semibold">Menyiapkan hidangan lezat dari dapur...</p>
           </div>
         ) : filteredMenu.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-[#EAE2D6] space-y-2">
-            <p className="text-sm font-bold text-[#2A2F23]">Menu tidak ditemukan</p>
-            <p className="text-xs text-[#5C6353]">Coba gunakan kata kunci pencarian lain atau pilih kategori Semua.</p>
+          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-[#F3E6D5] space-y-2">
+            <p className="text-sm font-bold text-[#2D151B]">Menu tidak ditemukan</p>
+            <p className="text-xs text-[#735A60]">Coba gunakan kata kunci pencarian lain atau pilih kategori Semua.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
@@ -316,8 +317,8 @@ export default function LandingPage() {
                   <div
                     className={`bg-white rounded-2xl sm:rounded-3xl overflow-hidden border transition-all flex flex-col justify-between h-full ${
                       isAvailable
-                        ? 'border-[#EAE2D6] shadow-xs hover:shadow-md hover:border-[#8B9A6E]/50'
-                        : 'border-[#EAE2D6]/60 opacity-70'
+                        ? 'border-[#F3E6D5] shadow-xs hover:shadow-md hover:border-[#800020]/40'
+                        : 'border-[#F3E6D5]/60 opacity-70'
                     }`}
                   >
                     <div>
@@ -332,16 +333,16 @@ export default function LandingPage() {
                         />
 
                         <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-                          <span className="bg-white/90 backdrop-blur-md text-[#8B9A6E] text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider border border-[#EAE2D6]">
+                          <span className="bg-white/90 backdrop-blur-md text-[#800020] text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider border border-[#F3E6D5]">
                             {item.category}
                           </span>
                           {item.isPopular && isAvailable && (
-                            <span className="bg-[#8B9A6E] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-xs flex items-center gap-1">
+                            <span className="bg-[#D45060] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-xs flex items-center gap-1">
                               <span>🔥</span> Favorit
                             </span>
                           )}
                           {!isAvailable && (
-                            <span className="bg-[#6B7260] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-xs">
+                            <span className="bg-[#735A60] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-xs">
                               Habis
                             </span>
                           )}
@@ -349,30 +350,30 @@ export default function LandingPage() {
                       </div>
 
                       <div className="p-4 sm:p-5 space-y-1.5">
-                        <h3 className="font-extrabold text-sm sm:text-base text-[#2A2F23] leading-snug line-clamp-1">
+                        <h3 className="font-extrabold text-sm sm:text-base text-[#2D151B] leading-snug line-clamp-1">
                           {item.name}
                         </h3>
-                        <p className="text-xs text-[#686E60] leading-relaxed line-clamp-2">
+                        <p className="text-xs text-[#735A60] leading-relaxed line-clamp-2">
                           {item.description || 'Sajian lezat khas WaroengMakan123 dengan racikan bumbu rempah pilihan.'}
                         </p>
                       </div>
                     </div>
 
-                    <div className="p-4 sm:p-5 pt-0 flex items-center justify-between gap-3 border-t border-[#EAE2D6]/40">
+                    <div className="p-4 sm:p-5 pt-0 flex items-center justify-between gap-3 border-t border-[#F3E6D5]/40">
                       <div>
-                        <span className="text-[10px] text-[#8A9182] block uppercase font-bold">Harga Porsi</span>
-                        <span className="text-sm sm:text-base font-black text-[#8B9A6E]">
+                        <span className="text-[10px] text-[#A89297] block uppercase font-bold">Harga Porsi</span>
+                        <span className="text-sm sm:text-base font-black text-[#800020]">
                           Rp {item.price.toLocaleString('id-ID')}
                         </span>
                       </div>
 
                       {!isAvailable ? (
-                        <span className="text-xs font-bold text-[#8A9182] bg-[#EEEEEE] px-3.5 py-1.5 rounded-full">
+                        <span className="text-xs font-bold text-[#A89297] bg-[#EEEEEE] px-3.5 py-1.5 rounded-full">
                           Stok Habis
                         </span>
                       ) : (
-                        <span className="text-[11px] font-bold text-[#8B9A6E] bg-[#8B9A6E]/12 px-3 py-1 rounded-full flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#8B9A6E]" />
+                        <span className="text-[11px] font-bold text-[#800020] bg-[#800020]/10 px-3 py-1 rounded-full flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#800020]" />
                           Tersedia
                         </span>
                       )}
@@ -386,69 +387,69 @@ export default function LandingPage() {
       </section>
 
       {/* SECTION: KATERING */}
-      <section id="katering" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 border-t border-[#EAE2D6] scroll-mt-10">
-        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-[#EAE2D6] shadow-xs">
+      <section id="katering" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 border-t border-[#F3E6D5] scroll-mt-10">
+        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-[#F3E6D5] shadow-xs">
           <div className="max-w-2xl mb-8 space-y-2">
-            <span className="text-xs font-bold text-[#8B9A6E] uppercase tracking-wider block">
+            <span className="text-xs font-bold text-[#800020] uppercase tracking-wider block">
               Layanan Pesanan Khusus
             </span>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#2A2F23] tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#2D151B] tracking-tight">
               Nasi Kotak & Katering Prasmanan Acara
             </h2>
-            <p className="text-xs sm:text-sm text-[#5C6353] leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#735A60] leading-relaxed">
               Butuh sajian untuk rapat kantor, pengajian, syukuran, atau arisan keluarga? Kami melayani pesanan partai besar dengan kemasan higienis, tepat waktu, dan bumbu rempah juara.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-            <div className="bg-[#F7F2EB] p-5 sm:p-6 rounded-2xl border border-[#EAE2D6] shadow-2xs space-y-3">
-              <span className="text-[10px] font-black uppercase text-[#8B9A6E] tracking-wider block">
+            <div className="bg-[#FFF9F2] p-5 sm:p-6 rounded-2xl border border-[#F3E6D5] shadow-2xs space-y-3">
+              <span className="text-[10px] font-black uppercase text-[#800020] tracking-wider block">
                 Paket Praktis
               </span>
-              <h3 className="font-extrabold text-base text-[#2A2F23]">Nasi Box Rames Nusantara</h3>
-              <p className="text-xs text-[#686E60] leading-relaxed">
+              <h3 className="font-extrabold text-base text-[#2D151B]">Nasi Box Rames Nusantara</h3>
+              <p className="text-xs text-[#735A60] leading-relaxed">
                 Nasi putih pulen, ayam goreng rempah/lengkuas, tempe orek manis, sambal bajak, dan lalap segar.
               </p>
-              <div className="pt-3 border-t border-[#EAE2D6]/40 flex items-center justify-between">
-                <span className="text-xs font-bold text-[#8B9A6E]">Mulai Rp 22.000 / box</span>
-                <span className="text-[11px] text-[#8A9182]">Min. 10 Box</span>
+              <div className="pt-3 border-t border-[#F3E6D5]/40 flex items-center justify-between">
+                <span className="text-xs font-bold text-[#800020]">Mulai Rp 22.000 / box</span>
+                <span className="text-[11px] text-[#A89297]">Min. 10 Box</span>
               </div>
             </div>
 
-            <div className="bg-white p-5 sm:p-6 rounded-2xl border-2 border-[#8B9A6E] shadow-sm space-y-3 relative">
-              <span className="absolute -top-2.5 right-4 bg-[#8B9A6E] text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border-2 border-[#800020] shadow-sm space-y-3 relative">
+              <span className="absolute -top-2.5 right-4 bg-[#D45060] text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                 Paling Laris
               </span>
-              <span className="text-[10px] font-black uppercase text-[#8B9A6E] tracking-wider block">
+              <span className="text-[10px] font-black uppercase text-[#800020] tracking-wider block">
                 Paket Istimewa
               </span>
-              <h3 className="font-extrabold text-base text-[#2A2F23]">Nasi Box Rendang & Telur</h3>
-              <p className="text-xs text-[#686E60] leading-relaxed">
+              <h3 className="font-extrabold text-base text-[#2D151B]">Nasi Box Rendang & Telur</h3>
+              <p className="text-xs text-[#735A60] leading-relaxed">
                 Nasi liwet/uduk, rendang sapi masak 8 jam, telur balado bulat, tumis buncis jagung manis, dan kerupuk udang.
               </p>
-              <div className="pt-3 border-t border-[#EAE2D6]/40 flex items-center justify-between">
-                <span className="text-xs font-bold text-[#8B9A6E]">Mulai Rp 35.000 / box</span>
-                <span className="text-[11px] text-[#8A9182]">Min. 15 Box</span>
+              <div className="pt-3 border-t border-[#F3E6D5]/40 flex items-center justify-between">
+                <span className="text-xs font-bold text-[#800020]">Mulai Rp 35.000 / box</span>
+                <span className="text-[11px] text-[#A89297]">Min. 15 Box</span>
               </div>
             </div>
 
-            <div className="bg-[#F7F2EB] p-5 sm:p-6 rounded-2xl border border-[#EAE2D6] shadow-2xs space-y-3">
-              <span className="text-[10px] font-black uppercase text-[#8B9A6E] tracking-wider block">
+            <div className="bg-[#FFF9F2] p-5 sm:p-6 rounded-2xl border border-[#F3E6D5] shadow-2xs space-y-3">
+              <span className="text-[10px] font-black uppercase text-[#800020] tracking-wider block">
                 Acara & Hajatan
               </span>
-              <h3 className="font-extrabold text-base text-[#2A2F23]">Set Prasmanan Lokasi</h3>
-              <p className="text-xs text-[#686E60] leading-relaxed">
+              <h3 className="font-extrabold text-base text-[#2D151B]">Set Prasmanan Lokasi</h3>
+              <p className="text-xs text-[#735A60] leading-relaxed">
                 Pemanas buffet lengkap, meja saji, peralatan makan, 5 pilihan lauk utama, 2 sayuran, aneka sambal, dan buah potong segar.
               </p>
-              <div className="pt-3 border-t border-[#EAE2D6]/40 flex items-center justify-between">
-                <span className="text-xs font-bold text-[#8B9A6E]">Hubungi untuk Custom</span>
-                <span className="text-[11px] text-[#8A9182]">Min. 30 Porsi</span>
+              <div className="pt-3 border-t border-[#F3E6D5]/40 flex items-center justify-between">
+                <span className="text-xs font-bold text-[#800020]">Hubungi untuk Custom</span>
+                <span className="text-[11px] text-[#A89297]">Min. 30 Porsi</span>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[#EAE2D6]">
-            <p className="text-xs text-[#686E60]">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[#F3E6D5]">
+            <p className="text-xs text-[#735A60]">
               💡 Pesanan katering harap dikonfirmasikan minimal 1-2 hari sebelum acara.
             </p>
             {settings.phone && (
@@ -458,7 +459,7 @@ export default function LandingPage() {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-[#8B9A6E] hover:bg-[#728157] text-white px-6 py-3 rounded-full text-xs font-bold transition-all shadow-xs flex items-center gap-2"
+                className="bg-[#800020] hover:bg-[#66001A] text-white px-6 py-3 rounded-full text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer"
               >
                 <span>💬</span>
                 <span>Konsultasi Katering via WhatsApp</span>
@@ -469,45 +470,45 @@ export default function LandingPage() {
       </section>
 
       {/* OUTLET & LOKASI */}
-      <section id="locations" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-18 border-t border-[#EAE2D6] scroll-mt-10">
+      <section id="locations" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-18 border-t border-[#F3E6D5] scroll-mt-10">
         <ScrollReveal direction="up">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
             <div>
-              <span className="text-xs font-bold text-[#8B9A6E] uppercase tracking-wider block mb-1">
+              <span className="text-xs font-bold text-[#800020] uppercase tracking-wider block mb-1">
                 Kunjungi Outlet Kami
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-[#2A2F23] tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#2D151B] tracking-tight">
                 Outlet & Jam Operasional
               </h2>
             </div>
-            <div className="inline-flex items-center gap-2 bg-white border border-[#EAE2D6] px-4 py-2 rounded-full text-xs font-bold text-[#5C6353]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#8B9A6E]" />
+            <div className="inline-flex items-center gap-2 bg-white border border-[#F3E6D5] px-4 py-2 rounded-full text-xs font-bold text-[#735A60]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#800020]" />
               Buka Setiap Hari: {settings.openHour} - {settings.closeHour} WIB
             </div>
           </div>
         </ScrollReveal>
 
         <ScrollReveal direction="up" delay={100}>
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EAE2D6] shadow-xs grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#F3E6D5] shadow-xs grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
             <div className="md:col-span-8 space-y-3">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#8B9A6E]" />
-                <h3 className="text-lg sm:text-xl font-black text-[#2A2F23]">
+                <span className="w-2 h-2 rounded-full bg-[#800020]" />
+                <h3 className="text-lg sm:text-xl font-black text-[#2D151B]">
                   {settings.restoName} — Outlet Utama
                 </h3>
               </div>
-              <p className="text-xs sm:text-sm text-[#5C6353] leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#735A60] leading-relaxed">
                 📍 {settings.address}
               </p>
-              <p className="text-xs text-[#686E60] leading-relaxed">
+              <p className="text-xs text-[#735A60] leading-relaxed">
                 Nikmati kenyamanan memilih langsung aneka hidangan prasmanan hangat dengan ruang makan bersih, higienis, dan parkir luas.
               </p>
               <div className="flex flex-wrap items-center gap-4 pt-2">
-                <div className="text-xs font-bold text-[#5C6353]">
-                  🕒 Jam Buka: <span className="text-[#8B9A6E]">{settings.openHour} - {settings.closeHour} WIB</span>
+                <div className="text-xs font-bold text-[#735A60]">
+                  🕒 Jam Buka: <span className="text-[#800020]">{settings.openHour} - {settings.closeHour} WIB</span>
                 </div>
-                <div className="text-xs font-bold text-[#5C6353]">
-                  📞 WhatsApp: <span className="text-[#8B9A6E]">{settings.phone}</span>
+                <div className="text-xs font-bold text-[#735A60]">
+                  📞 WhatsApp: <span className="text-[#800020]">{settings.phone}</span>
                 </div>
               </div>
             </div>
@@ -517,7 +518,7 @@ export default function LandingPage() {
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address + ' ' + settings.restoName)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-[#8B9A6E] hover:bg-[#728157] text-white py-3 px-5 rounded-2xl text-xs font-bold text-center transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                className="bg-[#800020] hover:bg-[#66001A] text-white py-3 px-5 rounded-2xl text-xs font-bold text-center transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -531,7 +532,7 @@ export default function LandingPage() {
                   href={`https://wa.me/${settings.phone.replace(/\D/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-[#EEEEEE] hover:bg-[#EAE2D6] text-[#2A2F23] border border-[#EAE2D6] py-3 px-5 rounded-2xl text-xs font-bold text-center transition-all flex items-center justify-center gap-2"
+                  className="bg-[#F3E6D5] hover:bg-[#E5D3BE] text-[#2D151B] border border-[#E5D3BE] py-3 px-5 rounded-2xl text-xs font-bold text-center transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>💬 Hubungi Pengelola Via WhatsApp</span>
                 </a>
@@ -542,71 +543,70 @@ export default function LandingPage() {
       </section>
 
       {/* SECTION ULASAN PELANGGAN & TOMBOL TULIS ULASAN */}
-      <section id="reviews" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 border-t border-[#EAE2D6] scroll-mt-10">
+      <section id="reviews" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 border-t border-[#F3E6D5] scroll-mt-10">
         <ScrollReveal direction="up">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
             <div className="space-y-2">
-              <span className="text-xs font-bold text-[#8B9A6E] uppercase tracking-wider block">
+              <span className="text-xs font-bold text-[#800020] uppercase tracking-wider block">
                 Testimoni
               </span>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#2A2F23] tracking-tight">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#2D151B] tracking-tight">
                 Apa Kata Pelanggan Kami?
               </h2>
-              <p className="text-xs sm:text-sm text-[#5C6353] leading-relaxed max-w-xl">
+              <p className="text-xs sm:text-sm text-[#735A60] leading-relaxed max-w-xl">
                 Kepuasan Anda adalah resep rahasia kami. Simak ulasan jujur dari pelanggan setia {settings.restoName} atau bagikan pengalaman kuliner Anda.
               </p>
             </div>
 
             <button
               onClick={() => setIsReviewModalOpen(true)}
-              className="bg-[#8B9A6E] hover:bg-[#728157] text-white px-6 py-3 rounded-full text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center gap-2 shrink-0 cursor-pointer"
+              className="bg-[#800020] hover:bg-[#66001A] text-white px-6 py-3 rounded-full text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center gap-2 shrink-0 cursor-pointer"
             >
-              <span>✍️</span>
               <span>Tulis Ulasan Anda</span>
             </button>
           </div>
         </ScrollReveal>
 
         {featuredReviews.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-[#EAE2D6] text-[#686E60] text-xs sm:text-sm">
+          <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-[#F3E6D5] text-[#735A60] text-xs sm:text-sm">
             Belum ada ulasan pilihan yang ditampilkan. Jadilah yang pertama memberikan ulasan!
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {featuredReviews.map((review) => (
-              <div key={review.id} className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EAE2D6] shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+              <div key={review.id} className="bg-white rounded-3xl p-6 sm:p-8 border border-[#F3E6D5] shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
                 <div className="space-y-4">
-                  <div className="flex text-[#8B9A6E] text-lg">
+                  <div className="flex text-[#D45060] text-lg">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <span key={i}>{i < review.rating ? '★' : '☆'}</span>
                     ))}
                   </div>
                   
                   {/* Komentar Pelanggan */}
-                  <p className="text-sm text-[#2A2F23] leading-relaxed italic">
-                    "{review.comment}"
+                  <p className="text-sm text-[#2D151B] leading-relaxed italic">
+                    &quot;{review.comment}&quot;
                   </p>
 
-                  {/* 3. TAMBAHAN: Tampilkan Box Balasan Admin Jika Ada */}
+                  {/* Tampilkan Box Balasan Admin Jika Ada */}
                   {review.reply && (
-                    <div className="bg-[#F7F2EB] rounded-2xl p-3.5 sm:p-4 border border-[#EAE2D6] space-y-1 mt-2">
-                      <span className="text-[11px] font-bold text-[#8B9A6E] block">
+                    <div className="bg-[#FFF9F2] rounded-2xl p-3.5 sm:p-4 border border-[#F3E6D5] space-y-1 mt-2">
+                      <span className="text-[11px] font-bold text-[#800020] block">
                         💬 Balasan dari {settings.restoName}:
                       </span>
-                      <p className="text-xs text-[#5C6353] leading-relaxed">
+                      <p className="text-xs text-[#735A60] leading-relaxed">
                         {review.reply}
                       </p>
                     </div>
                   )}
                 </div>
 
-                <div className="pt-4 border-t border-[#EAE2D6]/40 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#8B9A6E] text-white font-bold flex items-center justify-center text-sm shadow-xs shrink-0">
+                <div className="pt-4 border-t border-[#F3E6D5]/40 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#800020] text-white font-bold flex items-center justify-center text-sm shadow-xs shrink-0">
                     {review.customer_name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-sm text-[#2A2F23]">{review.customer_name}</h4>
-                    <p className="text-[11px] text-[#686E60] font-medium line-clamp-1">Favorit: {review.ordered_menu}</p>
+                    <h4 className="font-extrabold text-sm text-[#2D151B]">{review.customer_name}</h4>
+                    <p className="text-[11px] text-[#735A60] font-medium line-clamp-1">Favorit: {review.ordered_menu}</p>
                   </div>
                 </div>
               </div>
@@ -618,13 +618,13 @@ export default function LandingPage() {
       {/* MODAL FORM TULIS ULASAN UNTUK USER */}
       {isReviewModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 border border-[#EAE2D6] shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b pb-4 border-[#EAE2D6]">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 border border-[#F3E6D5] shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b pb-4 border-[#F3E6D5]">
               <div>
-                <h3 className="font-black text-lg text-[#2A2F23]">
+                <h3 className="font-black text-lg text-[#2D151B]">
                   Bagikan Ulasan Anda
                 </h3>
-                <p className="text-xs text-[#686E60] mt-0.5">
+                <p className="text-xs text-[#735A60] mt-0.5">
                   Pendapat Anda sangat berharga bagi peningkatan mutu {settings.restoName}
                 </p>
               </div>
@@ -640,16 +640,16 @@ export default function LandingPage() {
             {submitSuccess ? (
               <div className="py-8 text-center space-y-2">
                 <span className="text-4xl block">🎉</span>
-                <h4 className="font-black text-base text-[#2A2F23]">Terima Kasih Atas Ulasan Anda!</h4>
-                <p className="text-xs text-[#686E60]">
+                <h4 className="font-black text-base text-[#2D151B]">Terima Kasih Atas Ulasan Anda!</h4>
+                <p className="text-xs text-[#735A60]">
                   Ulasan Anda telah tersimpan dan akan ditinjau oleh pengelola resto.
                 </p>
               </div>
             ) : (
               <form onSubmit={handleSubmitNewReview} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#2A2F23] block">
-                    Rating Kepuasan <span className="text-[#8B9A6E]">*</span>
+                  <label className="text-xs font-bold text-[#2D151B] block">
+                    Rating Kepuasan <span className="text-[#800020]">*</span>
                   </label>
                   <div className="flex gap-2 text-2xl cursor-pointer">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -659,7 +659,7 @@ export default function LandingPage() {
                         onClick={() => setFormReview({ ...formReview, rating: star })}
                         className="transition-transform hover:scale-110 focus:outline-none"
                       >
-                        <span className={star <= formReview.rating ? 'text-[#8B9A6E]' : 'text-gray-300'}>
+                        <span className={star <= formReview.rating ? 'text-[#D45060]' : 'text-gray-300'}>
                           ★
                         </span>
                       </button>
@@ -668,8 +668,8 @@ export default function LandingPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[#2A2F23] block">
-                    Nama Anda <span className="text-[#8B9A6E]">*</span>
+                  <label className="text-xs font-bold text-[#2D151B] block">
+                    Nama Anda <span className="text-[#800020]">*</span>
                   </label>
                   <input
                     type="text"
@@ -677,12 +677,12 @@ export default function LandingPage() {
                     placeholder="Contoh: Budi Santoso"
                     value={formReview.customerName}
                     onChange={(e) => setFormReview({ ...formReview, customerName: e.target.value })}
-                    className="w-full bg-[#F7F2EB] border border-[#EAE2D6] rounded-xl px-3.5 py-2.5 text-xs font-medium text-[#2A2F23] focus:outline-none focus:ring-2 focus:ring-[#8B9A6E]"
+                    className="w-full bg-[#FFF9F2] border border-[#F3E6D5] rounded-xl px-3.5 py-2.5 text-xs font-medium text-[#2D151B] focus:outline-none focus:ring-2 focus:ring-[#800020]"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[#2A2F23] block">
+                  <label className="text-xs font-bold text-[#2D151B] block">
                     Menu yang Dipesan / Ditiptip (Opsional)
                   </label>
                   <input
@@ -690,13 +690,13 @@ export default function LandingPage() {
                     placeholder="Contoh: Nasi Rendang Sapi & Es Teh"
                     value={formReview.orderedMenu}
                     onChange={(e) => setFormReview({ ...formReview, orderedMenu: e.target.value })}
-                    className="w-full bg-[#F7F2EB] border border-[#EAE2D6] rounded-xl px-3.5 py-2.5 text-xs font-medium text-[#2A2F23] focus:outline-none focus:ring-2 focus:ring-[#8B9A6E]"
+                    className="w-full bg-[#FFF9F2] border border-[#F3E6D5] rounded-xl px-3.5 py-2.5 text-xs font-medium text-[#2D151B] focus:outline-none focus:ring-2 focus:ring-[#800020]"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[#2A2F23] block">
-                    Ulasan / Pengalaman Makan <span className="text-[#8B9A6E]">*</span>
+                  <label className="text-xs font-bold text-[#2D151B] block">
+                    Ulasan / Pengalaman Makan <span className="text-[#800020]">*</span>
                   </label>
                   <textarea
                     rows={4}
@@ -704,22 +704,22 @@ export default function LandingPage() {
                     placeholder="Ceritakan cita rasa makanan, kebersihan, atau pelayanan yang Anda rasakan..."
                     value={formReview.comment}
                     onChange={(e) => setFormReview({ ...formReview, comment: e.target.value })}
-                    className="w-full bg-[#F7F2EB] border border-[#EAE2D6] rounded-xl p-3.5 text-xs font-medium text-[#2A2F23] focus:outline-none focus:ring-2 focus:ring-[#8B9A6E] resize-none"
+                    className="w-full bg-[#FFF9F2] border border-[#F3E6D5] rounded-xl p-3.5 text-xs font-medium text-[#2D151B] focus:outline-none focus:ring-2 focus:ring-[#800020] resize-none"
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#EAE2D6]">
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#F3E6D5]">
                   <button
                     type="button"
                     onClick={() => setIsReviewModalOpen(false)}
-                    className="px-5 py-2.5 rounded-full border border-[#EAE2D6] text-xs font-bold text-[#5C6353] hover:bg-[#EEEEEE] transition-colors cursor-pointer"
+                    className="px-5 py-2.5 rounded-full border border-[#F3E6D5] text-xs font-bold text-[#735A60] hover:bg-[#F3E6D5]/50 transition-colors cursor-pointer"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingReview}
-                    className="px-6 py-2.5 rounded-full bg-[#8B9A6E] hover:bg-[#728157] text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                    className="px-6 py-2.5 rounded-full bg-[#800020] hover:bg-[#66001A] text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
                   >
                     {isSubmittingReview ? 'Mengirim...' : 'Kirim Ulasan'}
                   </button>
@@ -731,16 +731,16 @@ export default function LandingPage() {
       )}
 
       {/* TENTANG KAMI */}
-      <section id="about" className="bg-[#EAE2D6]/35 py-14 sm:py-18 px-6 border-t border-[#EAE2D6] scroll-mt-10">
+      <section id="about" className="bg-[#F3E6D5]/35 py-14 sm:py-18 px-6 border-t border-[#F3E6D5] scroll-mt-10">
         <ScrollReveal direction="up">
           <div className="max-w-3xl mx-auto text-center space-y-3.5">
-            <span className="text-[11px] font-black text-[#8B9A6E] uppercase tracking-wider block">
+            <span className="text-[11px] font-black text-[#800020] uppercase tracking-wider block">
               Semangat Warung Prasmanan Nusantara
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-[#2A2F23] tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#2D151B] tracking-tight">
               Filosofi Dapur {settings.restoName}
             </h2>
-            <p className="text-xs sm:text-sm text-[#5C6353] leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#735A60] leading-relaxed">
               Menghidupkan kembali kehangatan santap prasmanan khas Nusantara dengan standar kebersihan modern. 
               Semua olahan diracik setiap pagi dari rempah asli petani lokal, tanpa bahan pengawet sintetis berlebih, 
               memberikan kebebasan penuh bagi Anda untuk meracik piring makan sesuai selera dan isi kantong.
@@ -761,16 +761,24 @@ export default function LandingPage() {
       <button
         onClick={() => scrollToElement('top', { duration: 750 })}
         aria-label="Kembali ke atas"
-        className={`fixed bottom-6 right-6 z-40 p-3.5 rounded-full bg-[#8B9A6E] text-white shadow-2xl hover:bg-[#728157] hover:scale-110 active:scale-95 transition-all duration-300 border border-white/20 cursor-pointer ${
+        className={`fixed bottom-22 right-6 z-40 p-3 rounded-full bg-[#800020] text-white shadow-xl hover:bg-[#66001A] hover:scale-110 active:scale-95 transition-all duration-300 border border-white/20 cursor-pointer ${
           showScrollTop
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 translate-y-8 pointer-events-none'
         }`}
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 10l7-7m0 0l7 7m-7-7v18" />
         </svg>
       </button>
+
+      {/* FLOATING AI CHATBOT ASSISTANT (GEMINI) */}
+      <ChatbotButton
+        restoName={settings.restoName}
+        address={settings.address}
+        phone={settings.phone}
+        operatingHours={{ open: settings.openHour, close: settings.closeHour }}
+      />
     </div>
   );
 }

@@ -67,6 +67,7 @@ export function animatedScrollTo(targetY: number, options?: ScrollOptions) {
       cleanupInterrupts();
       cleanupInterrupts = null;
     }
+    options?.onComplete?.();
   };
 
   const events = ['wheel', 'touchmove'];
@@ -123,14 +124,14 @@ export function scrollToElement(elementId: string, options?: ScrollOptions) {
   const rect = element.getBoundingClientRect();
   const targetY = rect.top + window.pageYOffset;
   // Offset clearance: navbar height + breathing margin
-  const navOffset = options?.offset ?? (window.scrollY > 20 ? 82 : 92);
+  const navOffset = options?.offset ?? (window.scrollY > 30 ? 76 : 84);
 
   animatedScrollTo(targetY, {
     duration: options?.duration,
     offset: navOffset,
     onComplete: () => {
-      if (options?.highlight !== false) {
-        // Trigger subtle arrival glow highlight
+      if (options?.highlight) {
+        // Trigger subtle arrival glow highlight only when requested
         element.classList.remove('section-arrival-glow');
         void element.offsetWidth; // force DOM reflow
         element.classList.add('section-arrival-glow');

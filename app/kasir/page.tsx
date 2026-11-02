@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
+import { ADMIN_BASE_PATH } from '@/lib/adminConfig';
 
 // Extend window type untuk Midtrans Snap
 declare global {
@@ -312,7 +313,7 @@ export default function KasirPage() {
       {/* ── HEADER ── */}
       <header className="h-14 bg-[#2C2623] px-4 sm:px-6 flex items-center justify-between shrink-0 shadow-md">
         <div className="flex items-center gap-4">
-          <Link href="/admin" className="text-[#9E9894] hover:text-white transition-colors" title="Kembali ke Dashboard">
+          <Link href={ADMIN_BASE_PATH} className="text-[#9E9894] hover:text-white transition-colors" title="Kembali ke Dashboard">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>

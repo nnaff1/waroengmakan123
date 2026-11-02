@@ -17,6 +17,7 @@ export default function SettingsPage() {
   const [taxPercent, setTaxPercent] = useState('10');
   const [receiptFooter, setReceiptFooter] = useState('Terima kasih atas kunjungan Anda! Silakan datang kembali.');
 
+  const [adminEmail, setAdminEmail] = useState('admin@waroengmakan123.com');
   const [pinCode, setPinCode] = useState('2026');
   const [aiKey, setAiKey] = useState('AIzaSyD-resto-mockup-key-2026');
   const [autoUpsell, setAutoUpsell] = useState(true);
@@ -40,6 +41,7 @@ export default function SettingsPage() {
         setTaxPercent(data.tax_percent?.toString() || '10');
         setReceiptFooter(data.receipt_footer || 'Terima kasih atas kunjungan Anda! Silakan datang kembali.');
         setPinCode(data.pin_code || '2026');
+        setAdminEmail(data.admin_email || 'admin@waroengmakan123.com');
         setAutoUpsell(data.auto_upsell ?? true);
       }
     } catch (err) {
@@ -67,6 +69,7 @@ export default function SettingsPage() {
         tax_percent: Number(taxPercent) || 10,
         receipt_footer: receiptFooter,
         pin_code: pinCode,
+        admin_email: adminEmail.trim().toLowerCase(),
         auto_upsell: autoUpsell,
       };
 
@@ -223,26 +226,52 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* TAB 3: KEAMANAN PIN */}
+        {/* TAB 3: KEAMANAN AKSES */}
         {activeTab === 'keamanan' && (
-          <div className="bg-white rounded-3xl p-6 xl:p-8 border border-[#EBE5D8] shadow-xs space-y-4 xl:space-y-6">
+          <div className="bg-white rounded-3xl p-6 xl:p-8 border border-[#EBE5D8] shadow-xs space-y-6">
             <h3 className="text-sm xl:text-lg font-bold text-[#2C2623] border-b pb-3 border-[#F0ECE6]">
-              Akses Portal Admin
+              Akses Portal & Kredensial Admin
             </h3>
-            <div className="max-w-sm xl:max-w-md space-y-3">
-              <label className="text-xs xl:text-sm font-bold text-[#736D69] block">
-                Ganti PIN Keamanan (Saat ini: {pinCode})
-              </label>
-              <input
-                type="text"
-                maxLength={6}
-                value={pinCode}
-                onChange={(e) => setPinCode(e.target.value)}
-                className="w-full tracking-widest text-center font-mono font-bold bg-[#FAF8F5] border border-[#E5DEC9] rounded-xl p-3 text-base xl:text-lg text-[#8E3B24]"
-              />
-              <p className="text-[11px] xl:text-xs text-[#736D69]">
-                PIN ini digunakan seluruh staf berwenang untuk membuka portal manajemen.
-              </p>
+            
+            <div className="max-w-sm xl:max-w-md space-y-5">
+              {/* Email Admin */}
+              <div>
+                <label className="text-xs xl:text-sm font-bold text-[#736D69] block mb-1.5">
+                  Email Login Admin (Khusus Admin)
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    placeholder="admin@waroengmakan123.com"
+                    className="w-full bg-[#FAF8F5] border border-[#E5DEC9] rounded-xl p-3 text-xs xl:text-sm text-[#2C2623] font-medium"
+                  />
+                  <span className="absolute right-3 top-3 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    Database
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#736D69] mt-1.5 leading-relaxed">
+                  Email ini tersimpan langsung di tabel <code className="font-mono bg-stone-100 px-1 py-0.5 rounded">settings</code> Supabase dan digunakan untuk memvalidasi login admin.
+                </p>
+              </div>
+
+              {/* Password Admin */}
+              <div>
+                <label className="text-xs xl:text-sm font-bold text-[#736D69] block mb-1.5">
+                  Password Akses Admin
+                </label>
+                <input
+                  type="text"
+                  value={pinCode}
+                  onChange={(e) => setPinCode(e.target.value)}
+                  placeholder="Masukkan password admin..."
+                  className="w-full font-mono font-bold bg-[#FAF8F5] border border-[#E5DEC9] rounded-xl p-3 text-sm xl:text-base text-[#8E3B24]"
+                />
+                <p className="text-[11px] text-[#736D69] mt-1.5">
+                  Mendukung kombinasi huruf dan angka. Simpan pengaturan untuk menerapkan perubahan.
+                </p>
+              </div>
             </div>
           </div>
         )}
