@@ -411,7 +411,7 @@ export default function LandingPage() {
                 Nasi putih pulen, ayam goreng rempah/lengkuas, tempe orek manis, sambal bajak, dan lalap segar.
               </p>
               <div className="pt-3 border-t border-[#F3E6D5]/40 flex items-center justify-between">
-                <span className="text-xs font-bold text-[#800020]">Mulai Rp 22.000 / box</span>
+                <span className="text-xs font-bold text-[#800020]">Mulai Rp 15.000 / box</span>
                 <span className="text-[11px] text-[#A89297]">Min. 10 Box</span>
               </div>
             </div>
@@ -423,12 +423,12 @@ export default function LandingPage() {
               <span className="text-[10px] font-black uppercase text-[#800020] tracking-wider block">
                 Paket Istimewa
               </span>
-              <h3 className="font-extrabold text-base text-[#2D151B]">Nasi Box Rendang & Telur</h3>
+              <h3 className="font-extrabold text-base text-[#2D151B]">Nasi Box Rendang</h3>
               <p className="text-xs text-[#735A60] leading-relaxed">
                 Nasi liwet/uduk, rendang sapi masak 8 jam, telur balado bulat, tumis buncis jagung manis, dan kerupuk udang.
               </p>
               <div className="pt-3 border-t border-[#F3E6D5]/40 flex items-center justify-between">
-                <span className="text-xs font-bold text-[#800020]">Mulai Rp 35.000 / box</span>
+                <span className="text-xs font-bold text-[#800020]">Mulai Rp 22.000 / box</span>
                 <span className="text-[11px] text-[#A89297]">Min. 15 Box</span>
               </div>
             </div>
@@ -462,7 +462,7 @@ export default function LandingPage() {
                 className="bg-[#800020] hover:bg-[#66001A] text-white px-6 py-3 rounded-full text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer"
               >
                 <span>💬</span>
-                <span>Konsultasi Katering via WhatsApp</span>
+                <span>Hubungi WhatsApp</span>
               </a>
             )}
           </div>

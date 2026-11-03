@@ -104,7 +104,7 @@ export default function AdminLayout({
           const json = await res.json();
           serverData = json?.data;
         }
-      } catch {}
+      } catch { }
       const { data } = serverData ? { data: serverData } : await supabase
         .from('settings')
         .select('pin_code, admin_email')
@@ -231,9 +231,8 @@ export default function AdminLayout({
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[320px] bg-gradient-to-tr from-amber-100/30 via-stone-100/20 to-orange-100/20 rounded-full blur-3xl pointer-events-none" />
 
         <div
-          className={`w-full max-w-[390px] bg-white rounded-3xl border border-stone-200/90 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.06)] p-7 sm:p-8 relative z-10 animate-in fade-in zoom-in-95 duration-200 ${
-            isShaking ? 'animate-shake' : ''
-          }`}
+          className={`w-full max-w-[390px] bg-white rounded-3xl border border-stone-200/90 shadow-[0_12px_40px_-10px_rgba(0,0,0,0.06)] p-7 sm:p-8 relative z-10 animate-in fade-in zoom-in-95 duration-200 ${isShaking ? 'animate-shake' : ''
+            }`}
         >
           {/* Header & Brand */}
           <div className="flex flex-col items-center text-center">
@@ -379,11 +378,10 @@ export default function AdminLayout({
             <button
               type="submit"
               disabled={!inputEmail.trim() || !inputPassword.trim() || isSubmitting}
-              className={`w-full py-3 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer shadow-xs mt-1 ${
-                inputEmail.trim() && inputPassword.trim()
+              className={`w-full py-3 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer shadow-xs mt-1 ${inputEmail.trim() && inputPassword.trim()
                   ? 'bg-[#8E3B24] hover:bg-[#772F1B] text-white hover:shadow-md active:scale-98'
                   : 'bg-stone-100 text-stone-400 border border-stone-200/80 cursor-not-allowed'
-              }`}
+                }`}
             >
               {isSubmitting ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -447,11 +445,10 @@ export default function AdminLayout({
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                    isActive
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
                       ? 'bg-[#6B7C5E] text-white font-bold shadow-sm'
                       : 'hover:bg-[#E4DCCF] text-[#524D4A]'
-                  }`}
+                    }`}
                 >
                   {item.icon}
                   {item.label}
@@ -516,11 +513,10 @@ export default function AdminLayout({
                       key={item.label}
                       href={item.href}
                       onClick={() => setIsMobileSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                        isActive
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
                           ? 'bg-[#6B7C5E] text-white font-bold shadow-sm'
                           : 'hover:bg-[#E4DCCF] text-[#524D4A]'
-                      }`}
+                        }`}
                     >
                       {item.icon}
                       {item.label}
