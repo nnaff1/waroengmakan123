@@ -8,7 +8,7 @@ import { ADMIN_BASE_PATH } from '@/lib/adminConfig';
 import { supabase } from '@/lib/supabaseClient';
 
 const ADMIN_DEFAULT_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@waroengmakan123.com').toLowerCase().trim();
-const ADMIN_DEFAULT_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PIN || '2026';
+const ADMIN_DEFAULT_PASSWORD = (process.env.NEXT_PUBLIC_ADMIN_PIN || '2026').trim();
 
 export default function AdminLayout({
   children,
@@ -49,7 +49,7 @@ export default function AdminLayout({
           .eq('id', 1)
           .maybeSingle();
         if (data?.pin_code) {
-          setValidPassword(String(data.pin_code));
+          setValidPassword(String(data.pin_code).trim());
         }
         if (data?.admin_email) {
           setValidEmail(String(data.admin_email).toLowerCase().trim());
@@ -98,7 +98,7 @@ export default function AdminLayout({
 
       if (!error && data) {
         if (data.pin_code) {
-          activePassword = String(data.pin_code);
+          activePassword = String(data.pin_code).trim();
           setValidPassword(activePassword);
         }
         if (data.admin_email) {
@@ -129,7 +129,17 @@ export default function AdminLayout({
       }
     } catch (err) {
       console.error('Login error:', err);
-      setErrorMsg('Gagal memverifikasi ke database. Silakan coba lagi.');
+      if (emailTrimmed === validEmail && passTrimmed === validPassword) {
+        sessionStorage.setItem('waroeng_admin_auth', 'true');
+        sessionStorage.setItem('waroeng_admin_email', emailTrimmed);
+        setCurrentAdminEmail(emailTrimmed);
+        setIsAuthenticated(true);
+        setErrorMsg('');
+        setInputPassword('');
+        setInputEmail('');
+      } else {
+        setErrorMsg('Password salah atau koneksi database terputus.');
+      }
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 400);
     } finally {
