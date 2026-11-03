@@ -43,6 +43,13 @@ export default function AdminLayout({
 
     const fetchValidCredentials = async () => {
       try {
+        const res = await fetch('/api/admin/settings');
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.data?.pin_code) setValidPassword(String(json.data.pin_code).trim());
+          if (json?.data?.admin_email) setValidEmail(String(json.data.admin_email).toLowerCase().trim());
+          return;
+        }
         const { data } = await supabase
           .from('settings')
           .select('pin_code, admin_email')
@@ -90,13 +97,21 @@ export default function AdminLayout({
       let activePassword = validPassword;
       let activeEmail = validEmail;
 
-      const { data, error } = await supabase
+      let serverData: any = null;
+      try {
+        const res = await fetch('/api/admin/settings');
+        if (res.ok) {
+          const json = await res.json();
+          serverData = json?.data;
+        }
+      } catch {}
+      const { data } = serverData ? { data: serverData } : await supabase
         .from('settings')
         .select('pin_code, admin_email')
         .eq('id', 1)
         .maybeSingle();
 
-      if (!error && data) {
+      if (data) {
         if (data.pin_code) {
           activePassword = String(data.pin_code).trim();
           setValidPassword(activePassword);

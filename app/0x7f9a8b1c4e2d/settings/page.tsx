@@ -27,9 +27,33 @@ export default function SettingsPage() {
   const [pinErrorMsg, setPinErrorMsg] = useState('');
   const [showPinCode, setShowPinCode] = useState(false);
 
-  // Fetch settings dari Supabase saat halaman dimuat
+  // Fetch settings dari server API atau Supabase saat halaman dimuat
   const fetchSettings = useCallback(async () => {
+    const applyData = (data: any) => {
+      setRestoName(data.resto_name || 'WaroengMakan123');
+      setPhone(data.phone || '081234567890');
+      setAddress(data.address || 'Jl. Kuliner No. 12, Purwokerto');
+      setOpenHour(data.open_hour || '10:00');
+      setCloseHour(data.close_hour || '21:00');
+      setTaxPercent(data.tax_percent?.toString() || '10');
+      setReceiptFooter(data.receipt_footer || 'Terima kasih atas kunjungan Anda! Silakan datang kembali.');
+      setPinCode(String(data.pin_code || '2026').trim());
+      setAdminEmail(String(data.admin_email || 'admin@waroengmakan123.com').toLowerCase().trim());
+      setAutoUpsell(data.auto_upsell ?? true);
+    };
+
     try {
+      // Coba lewat internal server API dulu (same-origin, anti-CORS & adblocker)
+      const res = await fetch('/api/admin/settings');
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.data) {
+          applyData(json.data);
+          return;
+        }
+      }
+
+      // Fallback ke Supabase client
       const { data } = await supabase
         .from('settings')
         .select('*')
@@ -37,16 +61,7 @@ export default function SettingsPage() {
         .maybeSingle();
 
       if (data) {
-        setRestoName(data.resto_name || 'WaroengMakan123');
-        setPhone(data.phone || '081234567890');
-        setAddress(data.address || 'Jl. Kuliner No. 12, Purwokerto');
-        setOpenHour(data.open_hour || '10:00');
-        setCloseHour(data.close_hour || '21:00');
-        setTaxPercent(data.tax_percent?.toString() || '10');
-        setReceiptFooter(data.receipt_footer || 'Terima kasih atas kunjungan Anda! Silakan datang kembali.');
-        setPinCode(String(data.pin_code || '2026').trim());
-        setAdminEmail(String(data.admin_email || 'admin@waroengmakan123.com').toLowerCase().trim());
-        setAutoUpsell(data.auto_upsell ?? true);
+        applyData(data);
       }
     } catch (err) {
       console.error('Error fetch settings:', err);
@@ -77,17 +92,33 @@ export default function SettingsPage() {
     setPinErrorMsg('');
 
     try {
-      const { error } = await supabase
-        .from('settings')
-        .update({
+      // 1. Simpan via server route (same-origin, 100% no-CORS, anti-adblocker)
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_credentials',
           pin_code: cleanPin,
           admin_email: cleanEmail,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', 1);
+        }),
+      });
 
-      if (error) {
-        throw error;
+      const result = await res.json();
+
+      if (!res.ok || result.error) {
+        // Fallback coba langsung ke client Supabase
+        const { error: clientError } = await supabase
+          .from('settings')
+          .update({
+            pin_code: cleanPin,
+            admin_email: cleanEmail,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', 1);
+
+        if (clientError) {
+          throw new Error(result.error || clientError.message);
+        }
       }
 
       setPinCode(cleanPin);
@@ -116,7 +147,7 @@ export default function SettingsPage() {
 
     try {
       const payload = {
-        id: 1,
+        action: 'update_all',
         resto_name: restoName,
         phone,
         address,
@@ -127,22 +158,32 @@ export default function SettingsPage() {
         pin_code: pinCode.trim(),
         admin_email: adminEmail.trim().toLowerCase(),
         auto_upsell: autoUpsell,
-        updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from('settings')
-        .upsert(payload, { onConflict: 'id' });
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-      if (error) {
-        alert('Gagal menyimpan pengaturan: ' + error.message);
-      } else {
-        setSaveStatus(true);
-        setTimeout(() => setSaveStatus(false), 2500);
+      const result = await res.json();
+
+      if (!res.ok || result.error) {
+        // Fallback coba langsung ke client Supabase
+        const { error: clientError } = await supabase
+          .from('settings')
+          .upsert({ ...payload, id: 1, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+
+        if (clientError) {
+          throw new Error(result.error || clientError.message);
+        }
       }
-    } catch (err) {
+
+      setSaveStatus(true);
+      setTimeout(() => setSaveStatus(false), 2500);
+    } catch (err: any) {
       console.error('Error saving settings:', err);
-      alert('Terjadi kesalahan saat menyimpan.');
+      alert('Terjadi kesalahan saat menyimpan: ' + (err.message || 'Koneksi error'));
     } finally {
       setIsSaving(false);
     }

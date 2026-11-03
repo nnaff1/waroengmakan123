@@ -5,11 +5,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSnap } from '@/lib/midtrans';
 import { createClient } from '@supabase/supabase-js';
+import { DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_ANON_KEY } from '@/lib/supabaseClient';
 
 function makeSupabaseServer() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
   // Gunakan service_role jika tersedia dan tidak kosong, fallback ke anon
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
   return createClient(url, key);
 }
 
