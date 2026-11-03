@@ -29,6 +29,33 @@ export default function AdminLayout({
   const [showPassword, setShowPassword] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [operatingHours, setOperatingHours] = useState<{ open: string; close: string }>({
+    open: '07:00',
+    close: '19:00',
+  });
+  const [isRestoOpen, setIsRestoOpen] = useState(false);
+
+  const evaluateRestoOpen = (openStr: string, closeStr: string) => {
+    try {
+      const o = (openStr || '07:00').slice(0, 5);
+      const c = (closeStr || '19:00').slice(0, 5);
+      const [oH, oM] = o.split(':').map(Number);
+      const [cH, cM] = c.split(':').map(Number);
+      const openMinutes = (oH || 0) * 60 + (oM || 0);
+      const closeMinutes = (cH || 0) * 60 + (cM || 0);
+
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+      if (openMinutes <= closeMinutes) {
+        return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+      } else {
+        return currentMinutes >= openMinutes || currentMinutes < closeMinutes;
+      }
+    } catch {
+      return false;
+    }
+  };
 
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
@@ -46,13 +73,21 @@ export default function AdminLayout({
         const res = await fetch('/api/admin/settings');
         if (res.ok) {
           const json = await res.json();
-          if (json?.data?.pin_code) setValidPassword(String(json.data.pin_code).trim());
-          if (json?.data?.admin_email) setValidEmail(String(json.data.admin_email).toLowerCase().trim());
+          if (json?.data) {
+            if (json.data.pin_code) setValidPassword(String(json.data.pin_code).trim());
+            if (json.data.admin_email) setValidEmail(String(json.data.admin_email).toLowerCase().trim());
+            const oH = json.data.open_hour || '07:00';
+            const cH = json.data.close_hour || '19:00';
+            setOperatingHours({ open: oH, close: cH });
+            setIsRestoOpen(evaluateRestoOpen(oH, cH));
+            return;
+          }
+
           return;
         }
         const { data } = await supabase
           .from('settings')
-          .select('pin_code, admin_email')
+          .select('*')
           .eq('id', 1)
           .maybeSingle();
         if (data?.pin_code) {
@@ -60,6 +95,10 @@ export default function AdminLayout({
         }
         if (data?.admin_email) {
           setValidEmail(String(data.admin_email).toLowerCase().trim());
+          const oH = data.open_hour || '07:00';
+          const cH = data.close_hour || '19:00';
+          setOperatingHours({ open: oH, close: cH });
+          setIsRestoOpen(evaluateRestoOpen(oH, cH));
         }
       } catch (err) {
         console.error('Error fetching admin credentials:', err);
@@ -70,6 +109,13 @@ export default function AdminLayout({
 
     fetchValidCredentials();
   }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIsRestoOpen(evaluateRestoOpen(operatingHours.open, operatingHours.close));
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [operatingHours]);
 
   useEffect(() => {
     if (!isAuthenticated && !isLoadingAuth) {
@@ -582,10 +628,19 @@ export default function AdminLayout({
 
             <div className="hidden sm:block h-5 w-[1px] bg-[#E5DEC9]" />
 
-            <div className="hidden sm:inline-flex items-center gap-2 bg-stone-50/90 border border-stone-200/90 px-2.5 py-1 rounded-lg text-stone-700 shadow-2xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-              <span className="text-[11px] font-medium tracking-tight">Resto Buka</span>
-            </div>
+            {isRestoOpen ? (
+              <div className="hidden sm:inline-flex items-center gap-2 bg-emerald-50/90 border border-emerald-200/90 px-2.5 py-1 rounded-lg text-emerald-800 shadow-2xs" title={`Buka: ${operatingHours.open.slice(0, 5)} - ${operatingHours.close.slice(0, 5)} WIB`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+                <span className="text-[11px] font-semibold tracking-tight">Resto Buka</span>
+                <span className="text-[10px] text-emerald-600 font-normal">({operatingHours.open.slice(0, 5)} - {operatingHours.close.slice(0, 5)})</span>
+              </div>
+            ) : (
+              <div className="hidden sm:inline-flex items-center gap-2 bg-rose-50/90 border border-rose-200/90 px-2.5 py-1 rounded-lg text-rose-800 shadow-2xs" title={`Tutup. Buka kembali pukul ${operatingHours.open.slice(0, 5)} WIB`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                <span className="text-[11px] font-semibold tracking-tight">Resto Tutup</span>
+                <span className="text-[10px] text-rose-600 font-normal">(Buka {operatingHours.open.slice(0, 5)})</span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 md:gap-3.5">
