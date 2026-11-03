@@ -23,6 +23,16 @@ interface BufferStatus {
   tiktokChannel?: BufferChannel;
 }
 
+interface FonnteStatus {
+  connected: boolean;
+  device?: string;
+  name?: string;
+  quota?: string;
+  expired?: string;
+  statusString?: 'connect' | 'disconnect';
+  error?: string;
+}
+
 interface PromoData {
   instagramCaption: string;
   tiktokCaption: string;
@@ -58,16 +68,23 @@ export default function AICopilotPage() {
   // Editable text states
   const [editableIG, setEditableIG] = useState(DEFAULT_PROMO.instagramCaption);
   const [editableTikTok, setEditableTikTok] = useState(DEFAULT_PROMO.tiktokCaption);
+  const [editableWA, setEditableWA] = useState(DEFAULT_PROMO.whatsappBroadcast);
   const [isEditingIG, setIsEditingIG] = useState(false);
   const [isEditingTikTok, setIsEditingTikTok] = useState(false);
+  const [isEditingWA, setIsEditingWA] = useState(false);
 
   // Scheduling states for Instagram
   const [igMode, setIgMode] = useState<PublishMode>('customScheduled');
   const [igScheduleDate, setIgScheduleDate] = useState('');
 
-  // Buffer Status
+  // WhatsApp / Fonnte states
+  const [fonnteStatus, setFonnteStatus] = useState<FonnteStatus | null>(null);
+  const [waTarget, setWaTarget] = useState('081213517208');
+  const [waMode, setWaMode] = useState<'single' | 'broadcast'>('single');
+
+  // Service Status & Publishing
   const [bufferStatus, setBufferStatus] = useState<BufferStatus | null>(null);
-  const [isPublishing, setIsPublishing] = useState<'instagram' | 'tiktok' | null>(null);
+  const [isPublishing, setIsPublishing] = useState<'instagram' | 'tiktok' | 'whatsapp' | null>(null);
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -87,6 +104,11 @@ export default function AICopilotPage() {
       .then((res) => res.json())
       .then((data) => setBufferStatus(data))
       .catch((err) => console.error('Error fetching Buffer status:', err));
+
+    fetch('/api/whatsapp/status')
+      .then((res) => res.json())
+      .then((data) => setFonnteStatus(data))
+      .catch((err) => console.error('Error fetching Fonnte status:', err));
   };
 
   useEffect(() => {
@@ -132,8 +154,10 @@ export default function AICopilotPage() {
       setPromoData(newPromo);
       setEditableIG(newPromo.instagramCaption);
       setEditableTikTok(newPromo.tiktokCaption);
+      setEditableWA(newPromo.whatsappBroadcast);
       setIsEditingIG(false);
       setIsEditingTikTok(false);
+      setIsEditingWA(false);
     } catch (err) {
       console.error(err);
       alert('Gagal menghasilkan promo, template default tetap digunakan.');
@@ -190,6 +214,51 @@ export default function AICopilotPage() {
     }
   };
 
+  const handleSendToWhatsApp = async () => {
+    setIsPublishing('whatsapp');
+    setNotification(null);
+
+    const target = waTarget.trim();
+    if (!target) {
+      setNotification({
+        type: 'error',
+        message: 'Nomor tujuan WhatsApp wajib diisi.',
+      });
+      setIsPublishing(null);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target,
+          message: editableWA.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Gagal mengirim WhatsApp');
+      }
+
+      setNotification({
+        type: 'success',
+        message: `Pesan WhatsApp berhasil dikirim ke target via Fonnte!`,
+      });
+      fetchStatus();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gagal mengirim WhatsApp';
+      setNotification({
+        type: 'error',
+        message: msg,
+      });
+    } finally {
+      setIsPublishing(null);
+    }
+  };
+
   const setPresetSchedule = (daysFromNow: number, hours: number, minutes: number) => {
     const d = new Date();
     d.setDate(d.getDate() + daysFromNow);
@@ -232,21 +301,49 @@ export default function AICopilotPage() {
           </p>
         </div>
 
-        {/* Clean Buffer Connection Status */}
-        <div className="inline-flex items-center gap-2 text-xs bg-[#FAF8F5] border border-[#EBE5D8] px-3.5 py-1.5 rounded-full text-[#524D4A] self-start sm:self-auto shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-          <span className="font-semibold text-[#2C2623]">
-            {isIGConnected ? `Buffer: @${instagramName || 'waroengmakan123'}` : 'Buffer Aktif'}
-          </span>
-          <span className="text-[#D5CDBD]">•</span>
-          <a
-            href="https://publish.buffer.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#8E3B24] hover:underline font-medium shrink-0"
-          >
-            Dashboard ↗
-          </a>
+        {/* Clean Service Connection Statuses */}
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {/* Buffer Status */}
+          <div className="inline-flex items-center gap-2 text-xs bg-[#FAF8F5] border border-[#EBE5D8] px-3.5 py-1.5 rounded-full text-[#524D4A] shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <span className="font-semibold text-[#2C2623]">
+              {isIGConnected ? `Buffer: @${instagramName || 'waroengmakan123'}` : 'Buffer Aktif'}
+            </span>
+            <span className="text-[#D5CDBD]">•</span>
+            <a
+              href="https://publish.buffer.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#8E3B24] hover:underline font-medium shrink-0"
+            >
+              Buffer ↗
+            </a>
+          </div>
+
+          {/* Fonnte WhatsApp Status */}
+          <div className="inline-flex items-center gap-2 text-xs bg-[#FAF8F5] border border-[#EBE5D8] px-3.5 py-1.5 rounded-full text-[#524D4A] shadow-2xs">
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${
+                fonnteStatus?.connected ? 'bg-emerald-500' : 'bg-amber-500'
+              }`}
+            />
+            <span className="font-semibold text-[#2C2623]">
+              {fonnteStatus?.connected
+                ? `WA: ${fonnteStatus.device || 'Online'}`
+                : fonnteStatus?.name
+                ? `WA: ${fonnteStatus.name} (Scan QR)`
+                : 'Fonnte WA'}
+            </span>
+            <span className="text-[#D5CDBD]">•</span>
+            <a
+              href="https://md.fonnte.com/new/device.php"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-700 hover:underline font-medium shrink-0"
+            >
+              Fonnte ↗
+            </a>
+          </div>
         </div>
       </div>
 
@@ -397,86 +494,112 @@ export default function AICopilotPage() {
                   </div>
                 </div>
 
-                {/* SCHEDULING CONTROL BAR (BUFFER STYLE) */}
-                <div className="space-y-2.5 pt-2 border-t border-[#F0ECE6]">
-                  {/* Mode Selector Pill Buttons */}
-                  <div className="flex items-center justify-between gap-1 text-[11px]">
-                    <span className="text-[#938C87] font-semibold text-[10px] uppercase tracking-wider">
-                      Opsi Kirim:
-                    </span>
-                    <div className="flex bg-[#FAF8F5] border border-[#ECE7E1] rounded-xl p-0.5">
+                {/* SCHEDULING CONTROL BAR (MODERN CLEAN BUFFER STYLE) */}
+                <div className="space-y-3 pt-3 border-t border-[#F0ECE6]">
+                  {/* Mode Selector - Clean Segmented Control */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-stone-500 font-medium text-[11px]">
+                        Opsi Publikasi
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 p-1 bg-stone-100/90 rounded-xl border border-stone-200/70 gap-1 text-xs">
                       <button
                         type="button"
                         onClick={() => setIgMode('shareNow')}
-                        className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                        className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg font-medium transition-all cursor-pointer ${
                           igMode === 'shareNow'
-                            ? 'bg-[#8E3B24] text-white shadow-2xs'
-                            : 'text-[#736D69] hover:text-[#2C2623]'
+                            ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80 font-semibold'
+                            : 'text-stone-500 hover:text-stone-800 hover:bg-stone-200/40'
                         }`}
                       >
-                        ⚡ Post Now
+                        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                        </svg>
+                        <span>Post Now</span>
                       </button>
+
                       <button
                         type="button"
                         onClick={() => setIgMode('customScheduled')}
-                        className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                        className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg font-medium transition-all cursor-pointer ${
                           igMode === 'customScheduled'
-                            ? 'bg-[#8E3B24] text-white shadow-2xs'
-                            : 'text-[#736D69] hover:text-[#2C2623]'
+                            ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80 font-semibold'
+                            : 'text-stone-500 hover:text-stone-800 hover:bg-stone-200/40'
                         }`}
                       >
-                        ⏰ Schedule
+                        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <span>Schedule</span>
                       </button>
+
                       <button
                         type="button"
                         onClick={() => setIgMode('addToQueue')}
-                        className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                        className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg font-medium transition-all cursor-pointer ${
                           igMode === 'addToQueue'
-                            ? 'bg-[#8E3B24] text-white shadow-2xs'
-                            : 'text-[#736D69] hover:text-[#2C2623]'
+                            ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80 font-semibold'
+                            : 'text-stone-500 hover:text-stone-800 hover:bg-stone-200/40'
                         }`}
                       >
-                        📥 Antrean
+                        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="8" y1="6" x2="21" y2="6" />
+                          <line x1="8" y1="12" x2="21" y2="12" />
+                          <line x1="8" y1="18" x2="21" y2="18" />
+                          <line x1="3" y1="6" x2="3.01" y2="6" />
+                          <line x1="3" y1="12" x2="3.01" y2="12" />
+                          <line x1="3" y1="18" x2="3.01" y2="18" />
+                        </svg>
+                        <span>Antrean</span>
                       </button>
                     </div>
                   </div>
 
                   {/* Date & Time Picker Area (When Schedule is Selected) */}
                   {igMode === 'customScheduled' && (
-                    <div className="bg-[#FAF8F5] p-2.5 rounded-2xl border border-[#ECE7E1] space-y-2 transition-all">
-                      <div className="flex items-center justify-between gap-2">
-                        <label className="text-[10px] font-bold text-[#736D69] uppercase tracking-wider">
-                          Pilih Tanggal & Jam Tayang:
+                    <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#ECE7E1] space-y-2.5 transition-all">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <label className="text-xs font-medium text-stone-700 flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 text-stone-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                          <span>Pilih Tanggal & Waktu</span>
                         </label>
                         <input
                           type="datetime-local"
                           value={igScheduleDate}
                           onChange={(e) => setIgScheduleDate(e.target.value)}
-                          className="bg-white border border-[#EBE5D8] rounded-xl px-2.5 py-1 text-xs text-[#2C2623] focus:outline-none focus:ring-1 focus:ring-[#8E3B24]"
+                          className="bg-white border border-[#EBE5D8] rounded-xl px-2.5 py-1.5 text-xs text-[#2C2623] font-medium focus:outline-none focus:ring-2 focus:ring-[#8E3B24]/20 focus:border-[#8E3B24] transition-all cursor-pointer shadow-2xs"
                         />
                       </div>
 
                       {/* Quick Schedule Presets */}
-                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                        <span className="text-[9px] text-[#938C87] uppercase font-bold">Cepat:</span>
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-[#EFEBE4]">
+                        <span className="text-[11px] text-stone-400 font-medium mr-0.5">Preset:</span>
                         <button
                           type="button"
                           onClick={() => setPresetSchedule(1, 11, 30)}
-                          className="text-[10px] bg-white border border-[#ECE7E1] px-2 py-0.5 rounded-lg text-[#524D4A] hover:text-[#8E3B24] cursor-pointer"
+                          className="text-[11px] bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-stone-300 px-2.5 py-1 rounded-lg text-stone-700 hover:text-stone-900 transition-all cursor-pointer font-medium shadow-2xs"
                         >
                           Besok 11:30
                         </button>
                         <button
                           type="button"
                           onClick={() => setPresetSchedule(1, 17, 0)}
-                          className="text-[10px] bg-white border border-[#ECE7E1] px-2 py-0.5 rounded-lg text-[#524D4A] hover:text-[#8E3B24] cursor-pointer"
+                          className="text-[11px] bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-stone-300 px-2.5 py-1 rounded-lg text-stone-700 hover:text-stone-900 transition-all cursor-pointer font-medium shadow-2xs"
                         >
                           Besok 17:00
                         </button>
                         <button
                           type="button"
                           onClick={() => setPresetSchedule(2, 11, 0)}
-                          className="text-[10px] bg-white border border-[#ECE7E1] px-2 py-0.5 rounded-lg text-[#524D4A] hover:text-[#8E3B24] cursor-pointer"
+                          className="text-[11px] bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-stone-300 px-2.5 py-1 rounded-lg text-stone-700 hover:text-stone-900 transition-all cursor-pointer font-medium shadow-2xs"
                         >
                           +2 Hari 11:00
                         </button>
@@ -485,41 +608,95 @@ export default function AICopilotPage() {
                   )}
 
                   {igMode === 'shareNow' && (
-                    <div className="text-[10px] text-amber-800 bg-amber-50/80 border border-amber-200/80 px-2.5 py-1.5 rounded-xl">
-                      ⚡ Postingan akan langsung dipublikasikan detik ini juga ke akun Instagram @{instagramName || 'waroengmakan123'}.
+                    <div className="flex items-start gap-2.5 text-xs text-amber-900/90 bg-amber-50/70 border border-amber-200/80 p-2.5 rounded-xl">
+                      <svg className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                      <span className="leading-relaxed">
+                        Postingan akan langsung dipublikasikan sekarang ke Instagram <strong className="font-semibold text-amber-950">@{instagramName || 'waroengmakan123'}</strong>.
+                      </span>
                     </div>
                   )}
 
                   {igMode === 'addToQueue' && (
-                    <div className="text-[10px] text-[#736D69] bg-[#FAF8F5] border border-[#ECE7E1] px-2.5 py-1.5 rounded-xl">
-                      📥 Mengikuti slot jadwal tayang otomatis berikutnya yang sudah Anda atur di Buffer.
+                    <div className="flex items-start gap-2.5 text-xs text-stone-600 bg-[#FAF8F5] border border-[#ECE7E1] p-2.5 rounded-xl">
+                      <svg className="w-4 h-4 text-stone-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      <span className="leading-relaxed">
+                        Mengikuti slot jadwal otomatis berikutnya yang sudah ditentukan di akun Buffer Anda.
+                      </span>
                     </div>
                   )}
 
                   {/* Action Buttons */}
-                  <div className="flex items-center justify-between gap-2 pt-1">
+                  <div className="flex items-center justify-between gap-2 pt-1.5">
                     <button
                       type="button"
                       onClick={() => handleCopy(editableIG, 'ig')}
-                      className="text-xs font-semibold text-[#524D4A] hover:text-[#2C2623] px-3 py-1.5 rounded-xl hover:bg-[#FAF8F5] transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80 px-3 py-2 rounded-xl transition-all cursor-pointer shadow-2xs"
                     >
-                      {copiedKey === 'ig' ? '✓ Tersalin' : 'Salin'}
+                      {copiedKey === 'ig' ? (
+                        <>
+                          <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          <span className="text-emerald-700 font-medium">Tersalin</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                          </svg>
+                          <span>Salin</span>
+                        </>
+                      )}
                     </button>
 
                     <button
                       type="button"
                       disabled={isPublishing === 'instagram'}
                       onClick={() => handleSendToBuffer('instagram')}
-                      className="bg-[#8E3B24] hover:bg-[#78301B] text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      className="inline-flex items-center gap-2 bg-[#8E3B24] hover:bg-[#78301B] active:scale-[0.98] text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
                     >
                       {isPublishing === 'instagram' ? (
-                        <span>Memproses...</span>
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Memproses...</span>
+                        </>
                       ) : igMode === 'shareNow' ? (
-                        <span>⚡ Posting Sekarang</span>
+                        <>
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                          </svg>
+                          <span>Posting Sekarang</span>
+                        </>
                       ) : igMode === 'customScheduled' ? (
-                        <span>⏰ Jadwalkan ke Instagram</span>
+                        <>
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                          </svg>
+                          <span>Jadwalkan ke Instagram</span>
+                        </>
                       ) : (
-                        <span>📥 Masukkan Antrean</span>
+                        <>
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="8" y1="6" x2="21" y2="6" />
+                            <line x1="8" y1="12" x2="21" y2="12" />
+                            <line x1="8" y1="18" x2="21" y2="18" />
+                            <line x1="3" y1="6" x2="3.01" y2="6" />
+                            <line x1="3" y1="12" x2="3.01" y2="12" />
+                            <line x1="3" y1="18" x2="3.01" y2="18" />
+                          </svg>
+                          <span>Masukkan Antrean</span>
+                        </>
                       )}
                     </button>
                   </div>
@@ -570,56 +747,270 @@ export default function AICopilotPage() {
                   <button
                     type="button"
                     onClick={() => handleCopy(editableTikTok, 'tt')}
-                    className="text-xs font-semibold text-[#524D4A] hover:text-[#2C2623] px-3 py-1.5 rounded-xl hover:bg-[#FAF8F5] transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80 px-3 py-2 rounded-xl transition-all cursor-pointer shadow-2xs"
                   >
-                    {copiedKey === 'tt' ? '✓ Tersalin' : 'Salin'}
+                    {copiedKey === 'tt' ? (
+                      <>
+                        <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        <span className="text-emerald-700 font-medium">Tersalin</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                        <span>Salin</span>
+                      </>
+                    )}
                   </button>
 
                   <button
                     type="button"
                     disabled={isPublishing === 'tiktok'}
                     onClick={() => handleSendToBuffer('tiktok')}
-                    className="bg-[#2C2623] hover:bg-black text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+                    className="inline-flex items-center gap-2 bg-[#2C2623] hover:bg-black active:scale-[0.98] text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
                   >
-                    {isPublishing === 'tiktok' ? 'Menyimpan...' : 'Kirim ke Buffer'}
+                    {isPublishing === 'tiktok' ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Menyimpan...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-3.5 h-3.5 text-stone-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 2L11 13" />
+                          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                        </svg>
+                        <span>Kirim ke Buffer</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* WHATSAPP BROADCAST */}
-            <div className="bg-white rounded-3xl p-5 xl:p-7 border border-[#EBE5D8] shadow-xs space-y-3">
+            {/* CARD 3: WHATSAPP BROADCAST & STATUS (FONNTE POWERED) */}
+            <div className="bg-white rounded-3xl p-5 xl:p-7 border border-[#EBE5D8] shadow-xs space-y-4">
+              {/* Header */}
               <div className="flex items-center justify-between border-b border-[#F0ECE6] pb-2.5">
-                <div className="flex items-center gap-2 text-xs xl:text-sm font-bold text-[#2C2623]">
-                  <svg className="w-4 h-4 xl:w-5 xl:h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  <span>WhatsApp Broadcast</span>
+                <div className="flex items-center gap-2.5 text-xs xl:text-sm font-bold text-[#2C2623]">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span>WhatsApp Broadcast & Status</span>
+                    <div className="flex items-center gap-1.5 text-[10px]">
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          fonnteStatus?.connected ? 'bg-emerald-500' : 'bg-amber-500'
+                        }`}
+                      />
+                      <span
+                        className={
+                          fonnteStatus?.connected
+                            ? 'text-emerald-700 font-medium'
+                            : 'text-amber-700 font-medium'
+                        }
+                      >
+                        {fonnteStatus?.connected
+                          ? `${fonnteStatus.device || '081213517208'} (Device Online · Kuota: ${
+                              fonnteStatus.quota || '1000'
+                            })`
+                          : 'Perangkat belum tersambung (Scan QR di Fonnte)'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(promoData.whatsappBroadcast, 'wa')}
-                    className="text-xs font-semibold text-[#524D4A] hover:text-[#2C2623] px-3 py-1.5 rounded-xl hover:bg-[#FAF8F5] transition-all cursor-pointer"
-                  >
-                    {copiedKey === 'wa' ? '✓ Tersalin' : 'Salin'}
-                  </button>
-
-                  <a
-                    href={`https://wa.me/?text=${encodeURIComponent(promoData.whatsappBroadcast)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-full border border-emerald-200 transition-all"
-                  >
-                    Kirim WA ↗
-                  </a>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingWA(!isEditingWA)}
+                  className="text-[11px] text-[#736D69] hover:text-[#8E3B24] font-medium cursor-pointer"
+                >
+                  {isEditingWA ? 'Selesai' : 'Edit'}
+                </button>
               </div>
 
-              <p className="text-xs xl:text-sm text-[#524D4A] leading-relaxed bg-[#FAF8F5] p-3.5 xl:p-4 rounded-2xl border border-[#F0ECE6] whitespace-pre-line">
-                {promoData.whatsappBroadcast}
-              </p>
+              {/* Message Content Preview / Textarea */}
+              <div className="bg-[#FAF8F5] p-3.5 xl:p-4 rounded-2xl border border-[#F0ECE6]">
+                {isEditingWA ? (
+                  <textarea
+                    rows={5}
+                    value={editableWA}
+                    onChange={(e) => setEditableWA(e.target.value)}
+                    className="w-full bg-transparent text-xs xl:text-sm text-[#2C2623] leading-relaxed focus:outline-none resize-none"
+                  />
+                ) : (
+                  <p className="text-xs xl:text-sm text-[#524D4A] leading-relaxed whitespace-pre-line">
+                    {editableWA}
+                  </p>
+                )}
+              </div>
+
+              {/* WhatsApp Controls & Delivery Option */}
+              <div className="space-y-3 pt-2 border-t border-[#F0ECE6]">
+                {/* Mode Selector - Clean Segmented Control */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-stone-500 font-medium text-[11px]">
+                    Target Pengiriman:
+                  </span>
+                  <div className="grid grid-cols-2 p-1 bg-stone-100/90 rounded-xl border border-stone-200/70 gap-1 text-xs sm:w-80">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWaMode('single');
+                        setWaTarget('081213517208');
+                      }}
+                      className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg font-medium transition-all cursor-pointer ${
+                        waMode === 'single'
+                          ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80 font-semibold'
+                          : 'text-stone-500 hover:text-stone-800 hover:bg-stone-200/40'
+                      }`}
+                    >
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span>Nomor Resto (Tes)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWaMode('broadcast');
+                        if (waTarget === '081213517208') {
+                          setWaTarget('081213517208, 085712345678');
+                        }
+                      }}
+                      className={`flex items-center justify-center gap-1.5 py-1 px-2 rounded-lg font-medium transition-all cursor-pointer ${
+                        waMode === 'broadcast'
+                          ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80 font-semibold'
+                          : 'text-stone-500 hover:text-stone-800 hover:bg-stone-200/40'
+                      }`}
+                    >
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      <span>Broadcast Multi-Nomor</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Target Input */}
+                <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#ECE7E1] space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <label className="text-xs font-medium text-stone-700 flex items-center gap-1.5">
+                      <span>{waMode === 'single' ? 'Nomor Penerima WhatsApp:' : 'Daftar Nomor Pelanggan (Pisahkan dengan koma):'}</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={waTarget}
+                      onChange={(e) => setWaTarget(e.target.value)}
+                      placeholder="08123456789 atau multi-nomor: 0812xx,0857xx"
+                      className="bg-white border border-[#EBE5D8] rounded-xl px-3 py-1.5 text-xs text-[#2C2623] font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all sm:w-80 shadow-2xs"
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-[#EFEBE4]">
+                    <span className="text-[11px] text-stone-400 font-medium mr-0.5">Shortcut:</span>
+                    <button
+                      type="button"
+                      onClick={() => setWaTarget('081213517208')}
+                      className="text-[11px] bg-white hover:bg-stone-50 border border-stone-200/90 px-2.5 py-0.5 rounded-lg text-stone-700 transition-all cursor-pointer font-medium shadow-2xs"
+                    >
+                      Nomor Resto (081213517208)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setWaTarget('081213517208, 085712345678')}
+                      className="text-[11px] bg-white hover:bg-stone-50 border border-stone-200/90 px-2.5 py-0.5 rounded-lg text-stone-700 transition-all cursor-pointer font-medium shadow-2xs"
+                    >
+                      Multi-Nomor (Contoh)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Helpful note for WhatsApp Status / Story */}
+                <div className="flex items-center justify-between text-[11px] text-stone-500 bg-stone-50 border border-stone-200/80 px-3 py-2 rounded-xl">
+                  <span>
+                    💡 <strong>Tips Story WhatsApp:</strong> Klik <em>Salin</em> lalu buka WA Web untuk menempelkan teks promosi ini langsung ke Status Anda.
+                  </span>
+                  <a
+                    href="https://web.whatsapp.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-700 hover:underline font-semibold shrink-0 ml-2"
+                  >
+                    Buka Status WA ↗
+                  </a>
+                </div>
+
+                {/* Card Action Buttons */}
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(editableWA, 'wa')}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80 px-3 py-2 rounded-xl transition-all cursor-pointer shadow-2xs"
+                    >
+                      {copiedKey === 'wa' ? (
+                        <>
+                          <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          <span className="text-emerald-700 font-medium">Tersalin</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                          </svg>
+                          <span>Salin</span>
+                        </>
+                      )}
+                    </button>
+
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(editableWA)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-stone-800 px-2 py-1.5 transition-all"
+                      title="Buka secara manual di Web WhatsApp"
+                    >
+                      <span>Buka Chat WA</span>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <line x1="7" y1="17" x2="17" y2="7" />
+                        <polyline points="7 7 17 7 17 17" />
+                      </svg>
+                    </a>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isPublishing === 'whatsapp'}
+                    onClick={handleSendToWhatsApp}
+                    className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 active:scale-[0.98] text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
+                  >
+                    {isPublishing === 'whatsapp' ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Mengirim via Fonnte...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                        <span>Kirim Pesan via Fonnte</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* BUNDLING IDEA */}

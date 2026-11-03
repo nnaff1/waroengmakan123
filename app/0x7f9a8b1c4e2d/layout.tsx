@@ -561,9 +561,9 @@ export default function AdminLayout({
 
             <div className="hidden sm:block h-5 w-[1px] bg-[#E5DEC9]" />
 
-            <div className="hidden sm:flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2.5 py-1 rounded-full text-[11px] font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Resto Buka (Live)</span>
+            <div className="hidden sm:inline-flex items-center gap-2 bg-stone-50/90 border border-stone-200/90 px-2.5 py-1 rounded-lg text-stone-700 shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <span className="text-[11px] font-medium tracking-tight">Resto Buka</span>
             </div>
           </div>
 

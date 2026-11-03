@@ -214,9 +214,9 @@ export default function DashboardOverviewPage() {
               </svg>
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#4E6148]">
-            <span className="w-2 h-2 rounded-full bg-[#4E6148] animate-pulse" />
-            <span>Live Data Supabase</span>
+          <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-stone-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>Sinkronisasi Otomatis</span>
           </div>
         </div>
 
