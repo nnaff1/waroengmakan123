@@ -59,7 +59,7 @@ export default function MealMatcher({ onAddToCart }: MealMatcherProps) {
 
     const mains = availableForCombo.filter(
       (i) =>
-        i.category.toLowerCase().includes('makanan') ||
+        i.category.toLowerCase().includes('lauk') || i.category.toLowerCase().includes('sayur') || i.category.toLowerCase().includes('makanan') ||
         i.category.toLowerCase().includes('hewani') ||
         i.category.toLowerCase().includes('paket')
     );

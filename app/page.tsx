@@ -210,7 +210,7 @@ export default function LandingPage() {
   // Kategori Dinamis dari Menu yang Tersedia
   const dynamicCategories = useMemo(() => {
     const rawCategories = Array.from(new Set(menuItems.map((item) => item.category).filter(Boolean)));
-    const defaultOrder = ['Makanan Utama', 'Hewani (Goreng/Balado)', 'Aneka Sayur', 'Minuman', 'Cemilan', 'Paket Kombo'];
+    const defaultOrder = ['Lauk', 'Minuman', 'Sayur', 'Makanan Utama', 'Cemilan', 'Paket Kombo'];
     const merged = Array.from(new Set([...rawCategories, ...defaultOrder]));
     const presentCategories = merged.filter((cat) => menuItems.some((m) => m.category === cat));
     return ['Semua', ...(presentCategories.length > 0 ? presentCategories : rawCategories)];

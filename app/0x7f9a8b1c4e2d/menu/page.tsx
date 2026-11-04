@@ -30,7 +30,7 @@ export default function MenuManagerPage() {
   // Form State
   const [formData, setFormData] = useState({
     name: '',
-    category: 'Makanan Utama' as string,
+    category: 'Lauk' as string,
     price: '',
     description: '',
     image: '',
@@ -94,7 +94,7 @@ export default function MenuManagerPage() {
     setEditingItem(null);
     setFormData({
       name: '',
-      category: 'Makanan Utama',
+      category: 'Lauk',
       price: '',
       description: '',
       image: '',
@@ -270,7 +270,7 @@ export default function MenuManagerPage() {
         </div>
 
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {['Semua', 'Makanan Utama', 'Minuman', 'Cemilan'].map((cat) => (
+          {['Semua', 'Lauk', 'Minuman', 'Sayur'].map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
@@ -418,9 +418,9 @@ export default function MenuManagerPage() {
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full bg-[#FDFBF7] border border-[#E5DEC9] rounded-xl p-2.5 xl:p-3 text-xs xl:text-sm focus:outline-none focus:ring-1 focus:ring-[#6B7C5E]"
                   >
-                    <option value="Makanan Utama">Makanan Utama</option>
+                    <option value="Lauk">Lauk</option>
                     <option value="Minuman">Minuman</option>
-                    <option value="Cemilan">Cemilan</option>
+                    <option value="Sayur">Sayur</option>
                   </select>
                 </div>
                 <div>
