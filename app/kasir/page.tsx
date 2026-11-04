@@ -142,7 +142,7 @@ export default function KasirPage() {
 
   const [restoInfo, setRestoInfo] = useState({
     name: 'WaroengMakan123',
-    address: 'Jl. Kuliner No. 12, Purwokerto',
+    address: 'Gg. Dahlia, Sumampir Kulon, Sumampir, Purwokerto Utara',
     phone: '081234567890',
     taxPercent: 10,
     receiptFooter: 'Terima kasih atas kunjungan Anda!\nSelamat menikmati hidangan lezat khas Nusantara.',
@@ -166,7 +166,7 @@ export default function KasirPage() {
         if (data) {
           setRestoInfo({
             name: data.restaurant_name || data.resto_name || 'WaroengMakan123',
-            address: data.address || 'Jl. Kuliner No. 12, Purwokerto',
+            address: data.address || 'Gg. Dahlia, Sumampir Kulon, Sumampir, Purwokerto Utara',
             phone: data.whatsapp || data.phone || '081234567890',
             taxPercent: Number(data.tax_percent) || 10,
             receiptFooter: data.receipt_footer || 'Terima kasih atas kunjungan Anda!\nSelamat menikmati hidangan lezat khas Nusantara.',

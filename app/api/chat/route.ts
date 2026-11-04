@@ -5,7 +5,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 // In-memory cache agar tidak querying Supabase setiap detik
 let cachedMenuContext = '';
-let cachedRestoContext = 'WaroengMakan123, Jl. Kuliner No. 12, Purwokerto. Buka setiap hari pukul 10:00 - 21:00 WIB. WhatsApp: 081234567890.';
+let cachedRestoContext = 'WaroengMakan123, Gg. Dahlia, Sumampir Kulon, Sumampir, Kec. Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125 (Google Maps: https://maps.app.goo.gl/cGhfWpxV58Ghh3ct6). Buka setiap hari pukul 10:00 - 21:00 WIB. WhatsApp: 081234567890.';
 let lastFetchTime = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 menit
 
@@ -23,7 +23,7 @@ async function getRestoContext() {
 
     if (settingsRes.data) {
       const s = settingsRes.data;
-      cachedRestoContext = `${s.resto_name || 'WaroengMakan123'}, alamat: ${s.address || 'Jl. Kuliner No. 12, Purwokerto'}. Jam operasional: ${s.open_hour || '10:00'} - ${s.close_hour || '21:00'} WIB. WhatsApp/Pemesanan: ${s.phone || '081234567890'}.`;
+      cachedRestoContext = `${s.resto_name || 'WaroengMakan123'}, alamat: ${s.address || 'Gg. Dahlia, Sumampir Kulon, Sumampir, Kec. Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125'}. Jam operasional: ${s.open_hour || '10:00'} - ${s.close_hour || '21:00'} WIB. WhatsApp/Pemesanan: ${s.phone || '081234567890'}.`;
     }
 
     if (menuRes.data && menuRes.data.length > 0) {

@@ -14,7 +14,7 @@ type FooterProps = {
 
 export default function Footer({
   restoName = 'WaroengMakan123',
-  address = 'Jl. Kuliner No. 12, Purwokerto',
+  address = 'Gg. Dahlia, Sumampir Kulon, Sumampir, Kec. Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125',
   phone = '081234567890',
   operatingHours,
 }: FooterProps) {
@@ -129,9 +129,9 @@ export default function Footer({
           {/* Kontak & Lokasi */}
           <div className="md:col-span-4 space-y-3">
             <p className="text-xs font-bold text-[#FFF9F2] uppercase tracking-wider">Kontak & Alamat</p>
-            <p className="text-xs text-[#A89297] leading-relaxed">
+            <a href="https://maps.app.goo.gl/cGhfWpxV58Ghh3ct6" target="_blank" rel="noopener noreferrer" className="text-xs text-[#A89297] hover:text-[#D45060] leading-relaxed block transition-colors" title="Buka di Google Maps">
               📍 {address}
-            </p>
+            </a>
             {cleanPhone && (
               <div>
                 <a

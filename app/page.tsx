@@ -57,7 +57,7 @@ export default function LandingPage() {
   const [settings, setSettings] = useState({
     restoName: 'WaroengMakan123',
     phone: '081234567890',
-    address: 'Jl. Kuliner No. 12, Purwokerto',
+    address: 'Gg. Dahlia, Sumampir Kulon, Sumampir, Kec. Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125',
     openHour: '10:00',
     closeHour: '21:00',
     taxPercent: 10,
@@ -110,7 +110,7 @@ export default function LandingPage() {
         setSettings({
           restoName: data.resto_name || data.restaurant_name || 'WaroengMakan123',
           phone: data.phone || data.whatsapp || '081234567890',
-          address: data.address || 'Jl. Kuliner No. 12, Purwokerto',
+          address: data.address || 'Gg. Dahlia, Sumampir Kulon, Sumampir, Kec. Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125',
           openHour: (data.open_hour || data.opening_time || '10:00').slice(0, 5),
           closeHour: (data.close_hour || data.closing_time || '21:00').slice(0, 5),
           taxPercent: Number(data.tax_percent) || 10,
@@ -515,7 +515,7 @@ export default function LandingPage() {
 
             <div className="md:col-span-4 flex flex-col gap-3 justify-center">
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address + ' ' + settings.restoName)}`}
+                href="https://maps.app.goo.gl/cGhfWpxV58Ghh3ct6"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-[#800020] hover:bg-[#66001A] text-white py-3 px-5 rounded-2xl text-xs font-bold text-center transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"

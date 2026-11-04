@@ -10,7 +10,7 @@ export default function SettingsPage() {
   // Form States
   const [restoName, setRestoName] = useState('WaroengMakan123');
   const [phone, setPhone] = useState('081234567890');
-  const [address, setAddress] = useState('Jl. Kuliner No. 12, Purwokerto');
+  const [address, setAddress] = useState('Gg. Dahlia, Sumampir Kulon, Sumampir, Kec. Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125');
   const [openHour, setOpenHour] = useState('10:00');
   const [closeHour, setCloseHour] = useState('21:00');
 
@@ -32,7 +32,7 @@ export default function SettingsPage() {
     const applyData = (data: any) => {
       setRestoName(data.resto_name || 'WaroengMakan123');
       setPhone(data.phone || '081234567890');
-      setAddress(data.address || 'Jl. Kuliner No. 12, Purwokerto');
+      setAddress(data.address || 'Gg. Dahlia, Sumampir Kulon, Sumampir, Kec. Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125');
       setOpenHour(data.open_hour || '10:00');
       setCloseHour(data.close_hour || '21:00');
       setTaxPercent(data.tax_percent?.toString() || '10');

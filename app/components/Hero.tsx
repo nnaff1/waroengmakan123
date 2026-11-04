@@ -159,12 +159,12 @@ export default function Hero({ operatingHours, restoName = 'WaroengMakan123', ad
                 <span className="text-xs font-bold text-white tracking-wide">Prasmanan Fresh Dari Dapur</span>
               </div>
               {address && (
-                <span className="inline-flex items-center gap-1.5 text-[11px] text-[#F3E6D5] font-medium hidden sm:inline-flex truncate max-w-[210px]">
+                <a href="https://maps.app.goo.gl/cGhfWpxV58Ghh3ct6" target="_blank" rel="noopener noreferrer" title="Buka di Google Maps" className="inline-flex items-center gap-1.5 text-[11px] text-[#F3E6D5] hover:text-white font-medium hidden sm:inline-flex truncate max-w-[240px] transition-colors">
                   <svg className="w-3.5 h-3.5 text-[#D45060] shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                   </svg>
                   <span className="truncate">{address}</span>
-                </span>
+                </a>
               )}
             </div>
           </div>
