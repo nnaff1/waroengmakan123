@@ -50,7 +50,7 @@ type OrderItem = {
   qty: number;
 };
 
-const CATEGORIES = ['Semua', 'Lauk', 'Minuman', 'Sayur'];
+const CATEGORIES = ['Semua', 'Lauk', 'Minuman', 'Sayur', 'Cemilan'];
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
 
 type CompletedReceipt = {
@@ -618,32 +618,8 @@ export default function KasirPage() {
               />
             </div>
 
-            {/* Quick Presets */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {[
-                'Pelanggan Umum',
-                'Bungkus (Takeaway)',
-                'Dine In',
-                'Meja 01',
-                'Meja 02',
-              ].map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setCustomerName(preset)}
-                  className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border transition-all cursor-pointer ${
-                    customerName === preset
-                      ? 'bg-[#4E6148] text-white border-[#4E6148] shadow-xs'
-                      : 'bg-white text-[#736D69] border-[#E5DEC9] hover:bg-[#F2EDE4]'
-                  }`}
-                >
-                  {preset}
-                </button>
-              ))}
-            </div>
-
             {/* Preview Label Struk */}
-            <div className="pt-1 flex items-center justify-between text-[11px] font-mono">
+            <div className="pt-0.5 flex items-center justify-between text-[11px] font-mono">
               <span className="text-[10px] text-[#A89D98]">Tercetak di Struk:</span>
               <span className="font-bold text-[#8E3B24] bg-white border border-[#E8E4DF] px-2 py-0.5 rounded-md truncate max-w-[190px]">
                 👤 {customerName.trim() || 'Pelanggan Umum'}

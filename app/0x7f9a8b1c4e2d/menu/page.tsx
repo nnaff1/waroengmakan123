@@ -270,7 +270,7 @@ export default function MenuManagerPage() {
         </div>
 
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {['Semua', 'Lauk', 'Minuman', 'Sayur'].map((cat) => (
+          {['Semua', 'Lauk', 'Minuman', 'Sayur', 'Cemilan'].map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
@@ -421,6 +421,7 @@ export default function MenuManagerPage() {
                     <option value="Lauk">Lauk</option>
                     <option value="Minuman">Minuman</option>
                     <option value="Sayur">Sayur</option>
+                    <option value="Cemilan">Cemilan</option>
                   </select>
                 </div>
                 <div>
