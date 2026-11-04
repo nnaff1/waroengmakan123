@@ -5,7 +5,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 // In-memory cache agar tidak querying Supabase setiap detik
 let cachedMenuContext = '';
-let cachedRestoContext = 'WaroengMakan123, Gg. Dahlia, Sumampir Kulon, Sumampir, Kec. Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125 (Google Maps: https://maps.app.goo.gl/cGhfWpxV58Ghh3ct6). Buka setiap hari pukul 10:00 - 21:00 WIB. WhatsApp: 081234567890.';
+let cachedRestoContext = 'WaroengMakan123, Gg. Dahlia, Sumampir Kulon, Sumampir, Kec. Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53125 (Google Maps: https://www.google.com/maps/place/Warung+Makan+123/@-7.398786,109.2354923,17z/data=!3m1!4b1!4m6!3m5!1s0x2e655fa3ccb4c185:0xf0395c10eac9f13d!8m2!3d-7.398786!4d109.2354923!16s%2Fg%2F11fls1wzq7). Buka setiap hari pukul 10:00 - 21:00 WIB. WhatsApp: 081234567890.';
 let lastFetchTime = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 menit
 

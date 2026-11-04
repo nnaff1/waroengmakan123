@@ -129,7 +129,7 @@ export default function Footer({
           {/* Kontak & Lokasi */}
           <div className="md:col-span-4 space-y-3">
             <p className="text-xs font-bold text-[#FFF9F2] uppercase tracking-wider">Kontak & Alamat</p>
-            <a href="https://maps.app.goo.gl/cGhfWpxV58Ghh3ct6" target="_blank" rel="noopener noreferrer" className="text-xs text-[#A89297] hover:text-[#D45060] leading-relaxed block transition-colors" title="Buka di Google Maps">
+            <a href="https://www.google.com/maps/place/Warung+Makan+123/@-7.398786,109.2354923,17z/data=!3m1!4b1!4m6!3m5!1s0x2e655fa3ccb4c185:0xf0395c10eac9f13d!8m2!3d-7.398786!4d109.2354923!16s%2Fg%2F11fls1wzq7" target="_blank" rel="noopener noreferrer" className="text-xs text-[#A89297] hover:text-[#D45060] leading-relaxed block transition-colors" title="Buka di Google Maps">
               📍 {address}
             </a>
             {cleanPhone && (

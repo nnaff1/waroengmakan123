@@ -515,7 +515,7 @@ export default function LandingPage() {
 
             <div className="md:col-span-4 flex flex-col gap-3 justify-center">
               <a
-                href="https://maps.app.goo.gl/cGhfWpxV58Ghh3ct6"
+                href="https://www.google.com/maps/place/Warung+Makan+123/@-7.398786,109.2354923,17z/data=!3m1!4b1!4m6!3m5!1s0x2e655fa3ccb4c185:0xf0395c10eac9f13d!8m2!3d-7.398786!4d109.2354923!16s%2Fg%2F11fls1wzq7"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-[#800020] hover:bg-[#66001A] text-white py-3 px-5 rounded-2xl text-xs font-bold text-center transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
@@ -537,6 +537,39 @@ export default function LandingPage() {
                   <span>💬 Hubungi Pengelola Via WhatsApp</span>
                 </a>
               )}
+            </div>
+          </div>
+        </ScrollReveal>
+
+        {/* Peta Interaktif Langsung ke Pin Warung Makan 123 */}
+        <ScrollReveal direction="up" delay={150}>
+          <div className="mt-6 rounded-3xl overflow-hidden border border-[#F3E6D5] shadow-xs bg-[#FAF7F2]">
+            <div className="px-5 py-3.5 bg-white border-b border-[#F3E6D5] flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#800020] animate-pulse" />
+                <span className="text-xs font-bold text-[#2D151B]">Pin Lokasi Warung Makan 123 (Google Maps)</span>
+              </div>
+              <a
+                href="https://www.google.com/maps/place/Warung+Makan+123/@-7.398786,109.2354923,17z/data=!3m1!4b1!4m6!3m5!1s0x2e655fa3ccb4c185:0xf0395c10eac9f13d!8m2!3d-7.398786!4d109.2354923!16s%2Fg%2F11fls1wzq7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-bold text-[#800020] hover:underline flex items-center gap-1"
+              >
+                <span>Buka Rute & Ulasan di Google Maps</span>
+                <span>↗</span>
+              </a>
+            </div>
+            <div className="w-full h-[280px] sm:h-[360px]">
+              <iframe
+                title="Peta Lokasi Warung Makan 123"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3956.598542370536!2d109.2333036!3d-7.398786!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e655fa3ccb4c185%3A0xf0395c10eac9f13d!2sWarung%20Makan%20123!5e0!3m2!1sid!2sid"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen={false}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
             </div>
           </div>
         </ScrollReveal>
