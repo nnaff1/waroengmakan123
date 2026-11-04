@@ -3,6 +3,7 @@
 
 -- Kolom inti transaksi kasir
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS receipt_no      text;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name   text;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal        numeric(12, 2) DEFAULT 0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS tax             numeric(12, 2) DEFAULT 0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method  text;

@@ -17,7 +17,7 @@ function makeSupabaseServer() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { receiptNo, orders, subtotal, tax, grandTotal, paymentMethod, notes } = body;
+    const { receiptNo, orders, subtotal, tax, grandTotal, paymentMethod, notes, customerName } = body;
 
     // Validasi input dasar
     if (!receiptNo || !orders?.length || !grandTotal) {
@@ -26,6 +26,12 @@ export async function POST(request: NextRequest) {
 
     const calculatedSubtotal = subtotal !== undefined ? subtotal : orders.reduce((s: number, i: { price: number; qty: number }) => s + (i.price * (i.qty || 1)), 0);
     const calculatedTax = tax !== undefined ? tax : Math.max(0, grandTotal - calculatedSubtotal);
+
+    const cleanCustomerName = (customerName || '').trim();
+    const combinedNotes = [
+      cleanCustomerName ? `Pelanggan: ${cleanCustomerName}` : '',
+      notes ? notes.trim() : ''
+    ].filter(Boolean).join(' | ');
 
     // --- 1. Simpan order ke Supabase dengan status "Pending" ---
     const supabase = makeSupabaseServer();
@@ -36,13 +42,12 @@ export async function POST(request: NextRequest) {
         subtotal: calculatedSubtotal,
         tax: calculatedTax,
         items: orders,
-        // Kolom lama yang mungkin NOT NULL — kirim nilai default
-        table_number: 'Kasir',
+        table_number: cleanCustomerName ? `Kasir (${cleanCustomerName})` : 'Kasir',
         order_type: 'Prasmanan',
         receipt_no: receiptNo,
         ...(paymentMethod && { payment_method: paymentMethod }),
         status: 'Pending',
-        ...(notes && { notes }),
+        ...(combinedNotes && { notes: combinedNotes }),
       }])
       .select('id')
       .single();
@@ -76,6 +81,9 @@ export async function POST(request: NextRequest) {
         gross_amount: grandTotal,
       },
       item_details: itemDetails,
+      customer_details: {
+        first_name: cleanCustomerName || 'Pelanggan Kasir',
+      },
       enabled_payments: ['other_qris', 'gopay', 'shopeepay'],
       callbacks: {
         finish: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/kasir/payment-success`,

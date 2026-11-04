@@ -53,6 +53,19 @@ type OrderItem = {
 const CATEGORIES = ['Semua', 'Makanan Utama', 'Minuman', 'Cemilan', 'Hewani (Goreng/Balado)', 'Aneka Sayur', 'Dimsum & Mochi', 'Paket Kombo'];
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
 
+type CompletedReceipt = {
+  receiptNo: string;
+  date: string;
+  customerName: string;
+  cashierName: string;
+  items: OrderItem[];
+  subtotal: number;
+  tax: number;
+  grandTotal: number;
+  paymentMethod: string;
+  notes?: string;
+};
+
 // Bangun payload order yang aman — hanya kirim kolom yang sudah ada di DB.
 // Kolom opsional (receipt_no, subtotal, tax, payment_method, status, notes)
 // hanya dikirim jika nilainya ada, sehingga tidak crash jika kolom belum
@@ -66,21 +79,26 @@ function buildOrderPayload(params: {
   paymentMethod: string;
   status: string;
   items: OrderItem[];
+  customerName?: string;
   notes?: string;
 }) {
+  const cleanCustomerName = params.customerName?.trim() || '';
+  const combinedNotes = [
+    cleanCustomerName ? `Pelanggan: ${cleanCustomerName}` : '',
+    params.notes?.trim() || '',
+  ].filter(Boolean).join(' | ');
+
   return {
     grand_total: params.grandTotal,
     items: params.items,
-    // Kolom lama yang mungkin NOT NULL — kirim nilai default
-    table_number: 'Kasir',
+    table_number: cleanCustomerName ? `Kasir (${cleanCustomerName})` : 'Kasir',
     order_type: 'Prasmanan',
     subtotal: params.subtotal ?? 0,
     tax: params.tax ?? 0,
-    // Kolom opsional — ada setelah migration dijalankan
     ...(params.receiptNo && { receipt_no: params.receiptNo }),
     ...(params.paymentMethod && { payment_method: params.paymentMethod }),
     ...(params.status && { status: params.status }),
-    ...(params.notes && { notes: params.notes }),
+    ...(combinedNotes && { notes: combinedNotes }),
   };
 }
 
@@ -119,13 +137,46 @@ export default function KasirPage() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [receiptNo, setReceiptNo] = useState('');
   const [cashierName] = useState('Kasir 01');
+  const [customerName, setCustomerName] = useState('');
   const [customerNote, setCustomerNote] = useState('');
+
+  const [restoInfo, setRestoInfo] = useState({
+    name: 'WaroengMakan123',
+    address: 'Jl. Kuliner No. 12, Purwokerto',
+    phone: '081234567890',
+    taxPercent: 10,
+    receiptFooter: 'Terima kasih atas kunjungan Anda!\nSelamat menikmati hidangan lezat khas Nusantara.',
+  });
+
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [receiptData, setReceiptData] = useState<CompletedReceipt | null>(null);
 
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Generate receipt no hanya di client (anti hydration mismatch)
   useEffect(() => {
     setReceiptNo(generateReceiptNo());
+  }, []);
+
+  // Ambil pengaturan resto (nama, alamat, telepon, pajak, footer struk)
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const { data } = await supabase.from('settings').select('*').limit(1).maybeSingle();
+        if (data) {
+          setRestoInfo({
+            name: data.restaurant_name || data.resto_name || 'WaroengMakan123',
+            address: data.address || 'Jl. Kuliner No. 12, Purwokerto',
+            phone: data.whatsapp || data.phone || '081234567890',
+            taxPercent: Number(data.tax_percent) || 10,
+            receiptFooter: data.receipt_footer || 'Terima kasih atas kunjungan Anda!\nSelamat menikmati hidangan lezat khas Nusantara.',
+          });
+        }
+      } catch (err) {
+        console.warn('Gagal memuat pengaturan resto:', err);
+      }
+    }
+    fetchSettings();
   }, []);
 
   // Inject Midtrans Snap.js script
@@ -206,11 +257,12 @@ export default function KasirPage() {
     if (confirm('Hapus semua item dari struk ini?')) {
       setOrders([]);
       setCustomerNote('');
+      setCustomerName('');
     }
   };
 
   const subtotal = useMemo(() => orders.reduce((sum, i) => sum + i.price * i.qty, 0), [orders]);
-  const tax = Math.round(subtotal * 0.1);
+  const tax = Math.round(subtotal * (restoInfo.taxPercent / 100));
   const grandTotal = subtotal + tax;
   const totalItems = useMemo(() => orders.reduce((sum, i) => sum + i.qty, 0), [orders]);
 
@@ -226,6 +278,28 @@ export default function KasirPage() {
     if (orders.length === 0) return;
     setIsSubmitting(true);
 
+    const activeCustomerName = customerName.trim() || 'Pelanggan Umum';
+    const currentReceipt: CompletedReceipt = {
+      receiptNo,
+      date: new Date().toLocaleString('id-ID', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }) + ' WIB',
+      customerName: activeCustomerName,
+      cashierName,
+      items: [...orders],
+      subtotal,
+      tax,
+      grandTotal,
+      paymentMethod: selectedPayment,
+      notes: customerNote.trim() || undefined,
+    };
+
     try {
       // Untuk pembayaran Tunai — langsung simpan ke Supabase (tidak perlu gateway)
       if (selectedPayment === 'Tunai') {
@@ -237,11 +311,13 @@ export default function KasirPage() {
           paymentMethod: 'Tunai',
           status: 'Selesai',
           items: orders,
+          customerName: activeCustomerName,
           notes: customerNote || undefined,
         })]);
         if (error) throw new Error(error.message);
+        setReceiptData(currentReceipt);
         setIsSuccess(true);
-        setTimeout(() => { setOrders([]); setCustomerNote(''); setIsSuccess(false); }, 2200);
+        setShowReceiptModal(true);
         return;
       }
 
@@ -261,6 +337,7 @@ export default function KasirPage() {
           tax,
           grandTotal,
           paymentMethod: selectedPayment,
+          customerName: activeCustomerName,
           notes: customerNote || null,
         }),
       });
@@ -281,14 +358,14 @@ export default function KasirPage() {
       // Buka Midtrans Snap popup
       window.snap.pay(data.snapToken, {
         onSuccess: () => {
+          setReceiptData(currentReceipt);
           setIsSuccess(true);
-          setTimeout(() => { setOrders([]); setCustomerNote(''); setIsSuccess(false); setReceiptNo(generateReceiptNo()); }, 2200);
+          setShowReceiptModal(true);
         },
         onPending: () => {
           alert('Pembayaran masih pending. Status akan diperbarui otomatis via webhook.');
-          setOrders([]);
-          setCustomerNote('');
-          setReceiptNo(generateReceiptNo());
+          setReceiptData(currentReceipt);
+          setShowReceiptModal(true);
         },
         onError: (err) => {
           console.error('Snap error:', err);
@@ -305,6 +382,40 @@ export default function KasirPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handlePreviewReceipt = () => {
+    if (orders.length === 0) return;
+    setReceiptData({
+      receiptNo,
+      date: new Date().toLocaleString('id-ID', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }) + ' WIB',
+      customerName: customerName.trim() || 'Pelanggan Umum',
+      cashierName,
+      items: [...orders],
+      subtotal,
+      tax,
+      grandTotal,
+      paymentMethod: selectedPayment,
+      notes: customerNote.trim() || undefined,
+    });
+    setShowReceiptModal(true);
+  };
+
+  const handleNewTransaction = () => {
+    setOrders([]);
+    setCustomerName('');
+    setCustomerNote('');
+    setIsSuccess(false);
+    setShowReceiptModal(false);
+    setReceiptNo(generateReceiptNo());
   };
 
   return (
@@ -463,7 +574,7 @@ export default function KasirPage() {
         <div className="w-full lg:w-[360px] xl:w-[400px] bg-white flex flex-col shrink-0 border-t lg:border-t-0 lg:border-l border-[#E8E4DF]">
 
           {/* Header struk */}
-          <div className="px-5 pt-5 pb-4 border-b border-[#EFEBE5] flex items-center justify-between">
+          <div className="px-5 pt-4 pb-3 border-b border-[#EFEBE5] flex items-center justify-between">
             <div>
               <p className="text-[10px] font-bold text-[#A89D98] uppercase tracking-wider">Struk Penjualan</p>
               <p className="text-xs font-bold text-[#4E6148] font-mono mt-0.5">{receiptNo}</p>
@@ -475,6 +586,69 @@ export default function KasirPage() {
             >
               Kosongkan
             </button>
+          </div>
+
+          {/* ── IDENTITAS PELANGGAN DI STRUK ── */}
+          <div className="px-5 py-3.5 bg-[#FAF8F5] border-b border-[#EFEBE5] space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-bold text-[#736D69] uppercase tracking-wider flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-[#8E3B24]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Nama Pelanggan di Struk
+              </label>
+              {customerName && (
+                <button
+                  type="button"
+                  onClick={() => setCustomerName('')}
+                  className="text-[10px] font-semibold text-[#A89D98] hover:text-red-500 transition-colors cursor-pointer"
+                >
+                  Hapus
+                </button>
+              )}
+            </div>
+
+            <div className="relative">
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Nama Pelanggan (cth: Pak Budi / Meja 04)..."
+                className="w-full bg-white border border-[#E5DEC9] rounded-xl px-3 py-2 text-xs font-bold text-[#2C2623] placeholder:text-[#A89D98] placeholder:font-normal focus:outline-none focus:ring-1 focus:ring-[#4E6148] transition-all"
+              />
+            </div>
+
+            {/* Quick Presets */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                'Pelanggan Umum',
+                'Bungkus (Takeaway)',
+                'Dine In',
+                'Meja 01',
+                'Meja 02',
+              ].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setCustomerName(preset)}
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border transition-all cursor-pointer ${
+                    customerName === preset
+                      ? 'bg-[#4E6148] text-white border-[#4E6148] shadow-xs'
+                      : 'bg-white text-[#736D69] border-[#E5DEC9] hover:bg-[#F2EDE4]'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+
+            {/* Preview Label Struk */}
+            <div className="pt-1 flex items-center justify-between text-[11px] font-mono">
+              <span className="text-[10px] text-[#A89D98]">Tercetak di Struk:</span>
+              <span className="font-bold text-[#8E3B24] bg-white border border-[#E8E4DF] px-2 py-0.5 rounded-md truncate max-w-[190px]">
+                👤 {customerName.trim() || 'Pelanggan Umum'}
+              </span>
+            </div>
           </div>
 
           {/* List pesanan */}
@@ -539,7 +713,7 @@ export default function KasirPage() {
               <span className="font-semibold text-[#2C2623] tabular-nums">Rp {subtotal.toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between items-center text-[11px] text-[#A89D98]">
-              <span>Pajak (10%)</span>
+              <span>Pajak Resto ({restoInfo.taxPercent}%)</span>
               <span className="font-semibold text-[#2C2623] tabular-nums">Rp {tax.toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-dashed border-[#E5DEC9]">
@@ -587,8 +761,8 @@ export default function KasirPage() {
             </div>
           </div>
 
-          {/* Tombol Proses */}
-          <div className="px-5 pb-5">
+          {/* Tombol Proses & Pratinjau */}
+          <div className="px-5 pb-5 space-y-2">
             <button
               disabled={orders.length === 0 || isSubmitting}
               onClick={handleProcessPayment}
@@ -618,9 +792,200 @@ export default function KasirPage() {
                 `Proses — Rp ${grandTotal.toLocaleString('id-ID')}`
               )}
             </button>
+
+            {orders.length > 0 && (
+              <button
+                type="button"
+                onClick={handlePreviewReceipt}
+                className="w-full py-2.5 rounded-xl border border-[#D5CEB9] bg-[#FAF8F5] hover:bg-[#F2EDE4] text-[#4E6148] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Lihat / Pratinjau Struk
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* ── MODAL STRUK CETAK THERMAL ── */}
+      {showReceiptModal && receiptData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto no-print-backdrop">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-[#E5DEC9] flex flex-col gap-4 max-h-[92vh] overflow-hidden">
+            
+            {/* Header Modal (disembunyikan saat diprint) */}
+            <div className="flex items-center justify-between border-b pb-3 border-[#F0ECE6] no-print">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-[#2C2623]">Struk Penjualan Kasir</h3>
+                  <p className="text-[10px] text-[#736D69]">Format Struk Kasir Restoran</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowReceiptModal(false)}
+                className="w-7 h-7 rounded-full bg-[#FAF8F5] hover:bg-[#EFE9DF] text-[#736D69] flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Kertas Struk (Thermal Printable Container) */}
+            <div
+              id="printable-receipt"
+              className="bg-[#FCFBF9] p-5 rounded-2xl border border-dashed border-[#DDD7CD] font-mono text-[11px] text-[#2C2623] space-y-3 overflow-y-auto shadow-inner"
+            >
+              {/* Identitas Resto */}
+              <div className="text-center space-y-0.5">
+                <h2 className="font-black text-base uppercase tracking-wider text-black">
+                  {restoInfo.name}
+                </h2>
+                <p className="text-[10px] text-gray-600 leading-tight">
+                  {restoInfo.address}
+                </p>
+                <p className="text-[10px] text-gray-600">
+                  WA: {restoInfo.phone}
+                </p>
+              </div>
+
+              <div className="border-t border-dashed border-gray-400 my-2" />
+
+              {/* Info Struk & Nama Pelanggan */}
+              <div className="space-y-1 text-[10px]">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">No. Struk</span>
+                  <span className="font-bold">{receiptData.receiptNo}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Tanggal</span>
+                  <span>{receiptData.date}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Kasir</span>
+                  <span>{receiptData.cashierName}</span>
+                </div>
+                {/* PENAMAAN PELANGGAN DI STRUK */}
+                <div className="flex justify-between items-center py-1 px-2 bg-amber-50/90 rounded border border-amber-200 my-1 font-bold">
+                  <span className="text-amber-900">Pelanggan:</span>
+                  <span className="text-amber-950 uppercase font-black tracking-wide">
+                    {receiptData.customerName}
+                  </span>
+                </div>
+              </div>
+
+              <div className="border-t border-dashed border-gray-400 my-2" />
+
+              {/* Rincian Item Pesanan */}
+              <div className="space-y-1.5">
+                {receiptData.items.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-start text-[11px]">
+                    <div className="flex-1 pr-2">
+                      <span className="font-bold">{item.qty}x</span> {item.name}
+                    </div>
+                    <span className="shrink-0 font-bold tabular-nums">
+                      {(item.price * item.qty).toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-dashed border-gray-400 my-2" />
+
+              {/* Total & Biaya */}
+              <div className="space-y-1 text-[11px]">
+                <div className="flex justify-between text-gray-600">
+                  <span>Subtotal</span>
+                  <span className="tabular-nums">Rp {receiptData.subtotal.toLocaleString('id-ID')}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>Pajak Resto ({restoInfo.taxPercent}%)</span>
+                  <span className="tabular-nums">Rp {receiptData.tax.toLocaleString('id-ID')}</span>
+                </div>
+                <div className="flex justify-between text-xs font-black text-black pt-1 border-t border-gray-300">
+                  <span>TOTAL</span>
+                  <span className="tabular-nums">Rp {receiptData.grandTotal.toLocaleString('id-ID')}</span>
+                </div>
+                <div className="flex justify-between text-[10px] text-gray-600 pt-0.5">
+                  <span>Metode Bayar</span>
+                  <span className="font-bold uppercase text-emerald-800">{receiptData.paymentMethod} (LUNAS)</span>
+                </div>
+                {receiptData.notes && (
+                  <div className="text-[10px] text-gray-600 pt-1 italic">
+                    Catatan: {receiptData.notes}
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-dashed border-gray-400 my-2" />
+
+              {/* Pesan Kaki Struk */}
+              <div className="text-center text-[10px] text-gray-500 whitespace-pre-line leading-relaxed pt-1">
+                {restoInfo.receiptFooter}
+              </div>
+            </div>
+
+            {/* Tombol Aksi Modal (No-Print) */}
+            <div className="space-y-2 no-print pt-1">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="w-full py-3 rounded-xl bg-[#4E6148] hover:bg-[#3D4D38] text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm active:scale-[0.98]"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Cetak Struk (Thermal / Print)
+              </button>
+
+              <button
+                type="button"
+                onClick={handleNewTransaction}
+                className="w-full py-2.5 rounded-xl bg-[#FAF8F5] hover:bg-[#EFE9DF] text-[#2C2623] border border-[#E5DEC9] text-xs font-bold text-center transition-colors cursor-pointer"
+              >
+                ✓ Transaksi Baru Selesai
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── PRINT CSS KHUSUS STRUK KASIR ── */}
+      <style jsx global>{`
+        @media print {
+          body {
+            background: white !important;
+            color: black !important;
+          }
+          body * {
+            visibility: hidden !important;
+          }
+          #printable-receipt, #printable-receipt * {
+            visibility: visible !important;
+          }
+          #printable-receipt {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 80mm !important;
+            max-width: 80mm !important;
+            margin: 0 auto !important;
+            padding: 8px !important;
+            background: white !important;
+            color: black !important;
+            border: none !important;
+            box-shadow: none !important;
+          }
+          .no-print, .no-print-backdrop {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
