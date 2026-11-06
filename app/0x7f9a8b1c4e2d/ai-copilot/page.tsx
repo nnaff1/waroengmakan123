@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
 interface BufferChannel {
   id: string;
@@ -42,6 +43,65 @@ interface PromoData {
 
 type PublishMode = 'shareNow' | 'customScheduled' | 'addToQueue';
 
+interface PromoImageItem {
+  id: string;
+  name: string;
+  category: string;
+  url: string;
+}
+
+const PROMO_IMAGE_PRESETS: PromoImageItem[] = [
+  {
+    id: 'prasmanan',
+    name: 'Prasmanan Nusantara Lengkap',
+    category: 'Prasmanan',
+    url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1000&q=80',
+  },
+  {
+    id: 'ayam-lengkuas',
+    name: 'Ayam Goreng Lengkuas Rempah',
+    category: 'Lauk',
+    url: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=1000&q=80',
+  },
+  {
+    id: 'rendang-sapi',
+    name: 'Rendang Daging Sapi Mantap',
+    category: 'Lauk',
+    url: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?auto=format&fit=crop&w=1000&q=80',
+  },
+  {
+    id: 'sayur-kangkung',
+    name: 'Tumis Kangkung & Sayur Matang',
+    category: 'Sayur',
+    url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1000&q=80',
+  },
+  {
+    id: 'nasi-box',
+    name: 'Paket Nasi Box & Katering',
+    category: 'Katering',
+    url: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1000&q=80',
+  },
+  {
+    id: 'ikan-balado',
+    name: 'Ikan Bakar & Balado Pedas',
+    category: 'Lauk',
+    url: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1000&q=80',
+  },
+  {
+    id: 'cemilan-gorengan',
+    name: 'Aneka Gorengan & Cemilan Hangat',
+    category: 'Cemilan',
+    url: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?auto=format&fit=crop&w=1000&q=80',
+  },
+  {
+    id: 'minuman-es',
+    name: 'Es Teh Manis & Minuman Segar',
+    category: 'Minuman',
+    url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=1000&q=80',
+  },
+];
+
+
 const DEFAULT_PROMO: PromoData = {
   instagramCaption:
     'Nikmati akhir pekan seru bareng keluarga di WaroengMakan123! 🎉 Dapatkan diskon 20% untuk semua menu keluarga khusus Sabtu-Minggu ini. Yuk, buruan reservasi tempatmu sekarang! 👇\n\n#WaroengMakan123 #PromoKeluarga #KulinerNusantara',
@@ -80,6 +140,12 @@ export default function AICopilotPage() {
   // Scheduling states for TikTok
   const [tiktokMode, setTiktokMode] = useState<PublishMode>('customScheduled');
   const [tiktokScheduleDate, setTiktokScheduleDate] = useState('');
+
+  // Image attachment states for Buffer Social Media posting
+  const [availableImages, setAvailableImages] = useState<PromoImageItem[]>(PROMO_IMAGE_PRESETS);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>(PROMO_IMAGE_PRESETS[0].url);
+  const [selectedImageName, setSelectedImageName] = useState<string>(PROMO_IMAGE_PRESETS[0].name);
+  const [customImageUrl, setCustomImageUrl] = useState<string>('');
 
   // WhatsApp / Fonnte states
   const [fonnteStatus, setFonnteStatus] = useState<FonnteStatus | null>(null);
@@ -125,6 +191,36 @@ export default function AICopilotPage() {
     const defaultDate = formatDateTimeLocal(tomorrowLunch);
     setIgScheduleDate(defaultDate);
     setTiktokScheduleDate(defaultDate);
+
+    // Ambil foto menu dari Supabase yang memiliki URL public valid (dimulai http/https)
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('menu_items')
+          .select('id, name, category, image')
+          .neq('image', '');
+
+        if (data && data.length > 0) {
+          const publicMenuImages = data
+            .filter((m) => m.image && m.image.startsWith('http'))
+            .map((m) => ({
+              id: `menu-${m.id}`,
+              name: m.name,
+              category: m.category || 'Menu',
+              url: m.image,
+            }));
+          if (publicMenuImages.length > 0) {
+            setAvailableImages((prev) => {
+              const existingUrls = new Set(prev.map((p) => p.url));
+              const uniqueNewItems = publicMenuImages.filter((p) => !existingUrls.has(p.url));
+              return [...prev, ...uniqueNewItems];
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase menu images fetch failed:', err);
+      }
+    })();
   }, []);
 
   const handleCopy = (text: string, key: string) => {
@@ -196,6 +292,7 @@ export default function AICopilotPage() {
           title,
           mode,
           scheduledAt,
+          imageUrl: selectedImageUrl,
         }),
       });
 
@@ -465,6 +562,111 @@ export default function AICopilotPage() {
               AI Suggestions
             </span>
 
+            {/* SECTION PILIH FOTO LAMPIRAN POSTINGAN SOSIAL MEDIA */}
+            <div className="bg-white rounded-3xl p-5 xl:p-6 border border-[#EBE5D8] shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#F0ECE6] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#8E3B24]/10 text-[#8E3B24] flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xs xl:text-sm font-bold text-[#2C2623] flex items-center gap-2">
+                      <span>Pilih Foto Lampiran Postingan (Instagram & TikTok)</span>
+                    </h3>
+                    <p className="text-[11px] text-[#736D69] mt-0.5">
+                      Pilih foto hidangan yang cocok dengan ide promo agar postingan bervariasi dan menarik selera pembeli.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[11px] text-stone-400 font-medium">Foto Terpilih:</span>
+                  <div className="inline-flex items-center gap-1.5 bg-[#8E3B24]/10 border border-[#8E3B24]/20 px-2.5 py-1 rounded-xl text-xs font-bold text-[#8E3B24]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#8E3B24] animate-pulse" />
+                    <span className="truncate max-w-[170px]">{selectedImageName}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid Thumbnail Pilihan Foto */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
+                {availableImages.map((img) => {
+                  const isSelected = selectedImageUrl === img.url;
+                  return (
+                    <button
+                      key={img.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedImageUrl(img.url);
+                        setSelectedImageName(img.name);
+                      }}
+                      className={`group relative rounded-2xl overflow-hidden border-2 transition-all cursor-pointer text-left flex flex-col ${
+                        isSelected
+                          ? 'border-[#8E3B24] ring-2 ring-[#8E3B24]/20 shadow-sm'
+                          : 'border-[#F0ECE6] hover:border-stone-400 hover:shadow-xs'
+                      }`}
+                    >
+                      <div className="aspect-square w-full relative bg-stone-100 overflow-hidden">
+                        <img
+                          src={img.url}
+                          alt={img.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#8E3B24] text-white rounded-full flex items-center justify-center text-[10px] shadow-sm font-bold">
+                            ✓
+                          </div>
+                        )}
+                        <span className="absolute bottom-1 left-1 bg-black/60 backdrop-blur-xs text-white text-[9px] px-1.5 py-0.5 rounded-md font-semibold">
+                          {img.category}
+                        </span>
+                      </div>
+                      <div className="p-1.5 bg-[#FAF8F5] flex-1">
+                        <p className="text-[10px] font-medium text-stone-700 truncate leading-tight" title={img.name}>
+                          {img.name}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Opsi Custom URL Foto */}
+              <div className="pt-1 flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
+                <span className="text-stone-500 font-medium shrink-0 text-[11px]">
+                  Atau gunakan URL foto sendiri:
+                </span>
+                <div className="flex-1 flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="https://images.unsplash.com/... atau link foto publik lainnya"
+                    value={customImageUrl}
+                    onChange={(e) => setCustomImageUrl(e.target.value)}
+                    className="flex-1 bg-[#FAF8F5] border border-[#EBE5D8] rounded-xl px-3 py-1.5 text-xs text-[#2C2623] focus:outline-none focus:border-[#8E3B24] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (customImageUrl.trim().startsWith('http')) {
+                        setSelectedImageUrl(customImageUrl.trim());
+                        setSelectedImageName('Foto Kustom Pengguna');
+                      } else {
+                        alert('Silakan masukkan link foto yang valid (diawali http:// atau https://)');
+                      }
+                    }}
+                    className="bg-stone-200 hover:bg-stone-300 text-stone-800 px-3 py-1.5 rounded-xl font-medium cursor-pointer transition-colors shrink-0 text-xs"
+                  >
+                    Terapkan Foto
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* INSTAGRAM & TIKTOK SIDE BY SIDE */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 xl:gap-6">
               {/* CARD 1: INSTAGRAM CAPTION WITH SCHEDULING & POST NOW */}
@@ -494,6 +696,38 @@ export default function AICopilotPage() {
                     >
                       {isEditingIG ? 'Selesai' : 'Edit'}
                     </button>
+                  </div>
+
+                  {/* Preview Foto Terpilih Instagram */}
+                  <div className="flex items-center gap-2.5 p-2 bg-[#FAF8F5] rounded-xl border border-[#F0ECE6]">
+                    <img
+                      src={selectedImageUrl}
+                      alt={selectedImageName}
+                      className="w-9 h-9 rounded-lg object-cover border border-[#EBE5D8] shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[10px] text-stone-400 font-medium block">Foto Lampiran Posting:</span>
+                      <span className="text-xs font-semibold text-stone-800 truncate block">{selectedImageName}</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md shrink-0">
+                      Terlampir
+                    </span>
+                  </div>
+
+                  {/* Preview Foto Terpilih Instagram */}
+                  <div className="flex items-center gap-2.5 p-2 bg-[#FAF8F5] rounded-xl border border-[#F0ECE6]">
+                    <img
+                      src={selectedImageUrl}
+                      alt={selectedImageName}
+                      className="w-9 h-9 rounded-lg object-cover border border-[#EBE5D8] shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[10px] text-stone-400 font-medium block">Foto Lampiran Posting:</span>
+                      <span className="text-xs font-semibold text-stone-800 truncate block">{selectedImageName}</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md shrink-0">
+                      Terlampir
+                    </span>
                   </div>
 
                   <div className="bg-[#FAF8F5] p-3.5 xl:p-4 rounded-2xl border border-[#F0ECE6]">
