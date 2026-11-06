@@ -77,6 +77,10 @@ export default function AICopilotPage() {
   const [igMode, setIgMode] = useState<PublishMode>('customScheduled');
   const [igScheduleDate, setIgScheduleDate] = useState('');
 
+  // Scheduling states for TikTok
+  const [tiktokMode, setTiktokMode] = useState<PublishMode>('customScheduled');
+  const [tiktokScheduleDate, setTiktokScheduleDate] = useState('');
+
   // WhatsApp / Fonnte states
   const [fonnteStatus, setFonnteStatus] = useState<FonnteStatus | null>(null);
   const [waTarget, setWaTarget] = useState('081213517208');
@@ -118,7 +122,9 @@ export default function AICopilotPage() {
     const tomorrowLunch = new Date();
     tomorrowLunch.setDate(tomorrowLunch.getDate() + 1);
     tomorrowLunch.setHours(11, 30, 0, 0);
-    setIgScheduleDate(formatDateTimeLocal(tomorrowLunch));
+    const defaultDate = formatDateTimeLocal(tomorrowLunch);
+    setIgScheduleDate(defaultDate);
+    setTiktokScheduleDate(defaultDate);
   }, []);
 
   const handleCopy = (text: string, key: string) => {
@@ -175,8 +181,10 @@ export default function AICopilotPage() {
     const title = `Promo ${isIG ? 'Instagram' : 'TikTok'} WaroengMakan123`;
 
     // Ambil mode yang dipilih pengguna
-    const mode = isIG ? igMode : 'addToQueue';
-    const scheduledAt = isIG && igMode === 'customScheduled' && igScheduleDate ? igScheduleDate : undefined;
+    const mode = isIG ? igMode : tiktokMode;
+    const scheduledAt = isIG
+      ? (igMode === 'customScheduled' && igScheduleDate ? igScheduleDate : undefined)
+      : (tiktokMode === 'customScheduled' && tiktokScheduleDate ? tiktokScheduleDate : undefined);
 
     try {
       const res = await fetch('/api/buffer/publish', {
@@ -259,12 +267,18 @@ export default function AICopilotPage() {
     }
   };
 
-  const setPresetSchedule = (daysFromNow: number, hours: number, minutes: number) => {
+  const setPresetSchedule = (platform: 'instagram' | 'tiktok', daysFromNow: number, hours: number, minutes: number) => {
     const d = new Date();
     d.setDate(d.getDate() + daysFromNow);
     d.setHours(hours, minutes, 0, 0);
-    setIgScheduleDate(formatDateTimeLocal(d));
-    setIgMode('customScheduled');
+    const formatted = formatDateTimeLocal(d);
+    if (platform === 'instagram') {
+      setIgScheduleDate(formatted);
+      setIgMode('customScheduled');
+    } else {
+      setTiktokScheduleDate(formatted);
+      setTiktokMode('customScheduled');
+    }
   };
 
   // Helper untuk memformat teks caption dengan hashtag berwarna khas
@@ -287,6 +301,8 @@ export default function AICopilotPage() {
 
   const instagramName = bufferStatus?.instagramChannel?.name;
   const isIGConnected = Boolean(instagramName || bufferStatus?.hasInstagram);
+  const tiktokName = bufferStatus?.tiktokChannel?.name;
+  const isTikTokConnected = Boolean(tiktokName || bufferStatus?.hasTikTok);
 
   return (
     <div className="w-full max-w-[1800px] mx-auto space-y-6 xl:space-y-8 text-[#2C2623] p-2 sm:p-4 xl:p-6 font-sans">
@@ -584,21 +600,21 @@ export default function AICopilotPage() {
                         <span className="text-[11px] text-stone-400 font-medium mr-0.5">Preset:</span>
                         <button
                           type="button"
-                          onClick={() => setPresetSchedule(1, 11, 30)}
+                          onClick={() => setPresetSchedule('instagram', 1, 11, 30)}
                           className="text-[11px] bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-stone-300 px-2.5 py-1 rounded-lg text-stone-700 hover:text-stone-900 transition-all cursor-pointer font-medium shadow-2xs"
                         >
                           Besok 11:30
                         </button>
                         <button
                           type="button"
-                          onClick={() => setPresetSchedule(1, 17, 0)}
+                          onClick={() => setPresetSchedule('instagram', 1, 17, 0)}
                           className="text-[11px] bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-stone-300 px-2.5 py-1 rounded-lg text-stone-700 hover:text-stone-900 transition-all cursor-pointer font-medium shadow-2xs"
                         >
                           Besok 17:00
                         </button>
                         <button
                           type="button"
-                          onClick={() => setPresetSchedule(2, 11, 0)}
+                          onClick={() => setPresetSchedule('instagram', 2, 11, 0)}
                           className="text-[11px] bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-stone-300 px-2.5 py-1 rounded-lg text-stone-700 hover:text-stone-900 transition-all cursor-pointer font-medium shadow-2xs"
                         >
                           +2 Hari 11:00
@@ -703,8 +719,8 @@ export default function AICopilotPage() {
                 </div>
               </div>
 
-              {/* CARD 2: TIKTOK CAPTION */}
-              <div className="bg-white rounded-3xl p-5 xl:p-7 border border-[#EBE5D8] shadow-xs space-y-3 xl:space-y-4 flex flex-col justify-between">
+              {/* CARD 2: TIKTOK CAPTION WITH SCHEDULING & POST NOW */}
+              <div className="bg-white rounded-3xl p-5 xl:p-7 border border-[#EBE5D8] shadow-xs space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-[#F0ECE6] pb-2.5">
                     <div className="flex items-center gap-2 text-xs xl:text-sm font-bold text-[#2C2623]">
@@ -713,9 +729,15 @@ export default function AICopilotPage() {
                       </svg>
                       <div>
                         <span>TikTok Caption</span>
-                        <span className="block text-[10px] text-[#938C87]">
-                          Format siap posting TikTok
-                        </span>
+                        {isTikTokConnected ? (
+                          <span className="block text-[10px] text-emerald-600 font-medium">
+                            ● @{tiktokName || 'waroengmakan123'} (Terhubung)
+                          </span>
+                        ) : (
+                          <span className="block text-[10px] text-[#938C87]">
+                            Format siap posting TikTok
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -742,52 +764,212 @@ export default function AICopilotPage() {
                   </div>
                 </div>
 
-                {/* Card Actions */}
-                <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#F0ECE6]">
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(editableTikTok, 'tt')}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80 px-3 py-2 rounded-xl transition-all cursor-pointer shadow-2xs"
-                  >
-                    {copiedKey === 'tt' ? (
-                      <>
-                        <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        <span className="text-emerald-700 font-medium">Tersalin</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                        </svg>
-                        <span>Salin</span>
-                      </>
-                    )}
-                  </button>
+                {/* SCHEDULING CONTROL BAR (MODERN CLEAN BUFFER STYLE FOR TIKTOK) */}
+                <div className="space-y-3 pt-3 border-t border-[#F0ECE6]">
+                  {/* Mode Selector - Clean Segmented Control */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-stone-500 font-medium text-[11px]">
+                        Opsi Publikasi
+                      </span>
+                    </div>
 
-                  <button
-                    type="button"
-                    disabled={isPublishing === 'tiktok'}
-                    onClick={() => handleSendToBuffer('tiktok')}
-                    className="inline-flex items-center gap-2 bg-[#2C2623] hover:bg-black active:scale-[0.98] text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
-                  >
-                    {isPublishing === 'tiktok' ? (
-                      <>
-                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Menyimpan...</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-3.5 h-3.5 text-stone-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M22 2L11 13" />
-                          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    <div className="grid grid-cols-3 p-1 bg-stone-100/90 rounded-xl border border-stone-200/70 gap-1 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setTiktokMode('shareNow')}
+                        className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg font-medium transition-all cursor-pointer ${
+                          tiktokMode === 'shareNow'
+                            ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80 font-semibold'
+                            : 'text-stone-500 hover:text-stone-800 hover:bg-stone-200/40'
+                        }`}
+                      >
+                        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                         </svg>
-                        <span>Kirim ke Buffer</span>
-                      </>
-                    )}
-                  </button>
+                        <span>Post Now</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setTiktokMode('customScheduled')}
+                        className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg font-medium transition-all cursor-pointer ${
+                          tiktokMode === 'customScheduled'
+                            ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80 font-semibold'
+                            : 'text-stone-500 hover:text-stone-800 hover:bg-stone-200/40'
+                        }`}
+                      >
+                        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <span>Schedule</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setTiktokMode('addToQueue')}
+                        className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg font-medium transition-all cursor-pointer ${
+                          tiktokMode === 'addToQueue'
+                            ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80 font-semibold'
+                            : 'text-stone-500 hover:text-stone-800 hover:bg-stone-200/40'
+                        }`}
+                      >
+                        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="8" y1="6" x2="21" y2="6" />
+                          <line x1="8" y1="12" x2="21" y2="12" />
+                          <line x1="8" y1="18" x2="21" y2="18" />
+                          <line x1="3" y1="6" x2="3.01" y2="6" />
+                          <line x1="3" y1="12" x2="3.01" y2="12" />
+                          <line x1="3" y1="18" x2="3.01" y2="18" />
+                        </svg>
+                        <span>Antrean</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Date & Time Picker Area (When Schedule is Selected) */}
+                  {tiktokMode === 'customScheduled' && (
+                    <div className="bg-[#FAF8F5] p-3 rounded-2xl border border-[#ECE7E1] space-y-2.5 transition-all">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <label className="text-xs font-medium text-stone-700 flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 text-stone-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                          <span>Pilih Tanggal & Waktu</span>
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={tiktokScheduleDate}
+                          onChange={(e) => setTiktokScheduleDate(e.target.value)}
+                          className="bg-white border border-[#EBE5D8] rounded-xl px-2.5 py-1.5 text-xs text-[#2C2623] font-medium focus:outline-none focus:ring-2 focus:ring-[#2C2623]/20 focus:border-[#2C2623] transition-all cursor-pointer shadow-2xs"
+                        />
+                      </div>
+
+                      {/* Quick Schedule Presets */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-[#EFEBE4]">
+                        <span className="text-[11px] text-stone-400 font-medium mr-0.5">Preset:</span>
+                        <button
+                          type="button"
+                          onClick={() => setPresetSchedule('tiktok', 1, 11, 30)}
+                          className="text-[11px] bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-stone-300 px-2.5 py-1 rounded-lg text-stone-700 hover:text-stone-900 transition-all cursor-pointer font-medium shadow-2xs"
+                        >
+                          Besok 11:30
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPresetSchedule('tiktok', 1, 17, 0)}
+                          className="text-[11px] bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-stone-300 px-2.5 py-1 rounded-lg text-stone-700 hover:text-stone-900 transition-all cursor-pointer font-medium shadow-2xs"
+                        >
+                          Besok 17:00
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPresetSchedule('tiktok', 2, 11, 0)}
+                          className="text-[11px] bg-white hover:bg-stone-50 border border-stone-200/90 hover:border-stone-300 px-2.5 py-1 rounded-lg text-stone-700 hover:text-stone-900 transition-all cursor-pointer font-medium shadow-2xs"
+                        >
+                          +2 Hari 11:00
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {tiktokMode === 'shareNow' && (
+                    <div className="flex items-start gap-2.5 text-xs text-amber-900/90 bg-amber-50/70 border border-amber-200/80 p-2.5 rounded-xl">
+                      <svg className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                      <span className="leading-relaxed">
+                        Postingan akan langsung dipublikasikan sekarang ke TikTok <strong className="font-semibold text-amber-950">@{tiktokName || 'waroengmakan123'}</strong>.
+                      </span>
+                    </div>
+                  )}
+
+                  {tiktokMode === 'addToQueue' && (
+                    <div className="flex items-start gap-2.5 text-xs text-stone-600 bg-[#FAF8F5] border border-[#ECE7E1] p-2.5 rounded-xl">
+                      <svg className="w-4 h-4 text-stone-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      <span className="leading-relaxed">
+                        Mengikuti slot jadwal otomatis berikutnya yang sudah ditentukan di akun Buffer Anda.
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-between gap-2 pt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(editableTikTok, 'tt')}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200/80 px-3 py-2 rounded-xl transition-all cursor-pointer shadow-2xs"
+                    >
+                      {copiedKey === 'tt' ? (
+                        <>
+                          <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          <span className="text-emerald-700 font-medium">Tersalin</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                          </svg>
+                          <span>Salin</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isPublishing === 'tiktok'}
+                      onClick={() => handleSendToBuffer('tiktok')}
+                      className="inline-flex items-center gap-2 bg-[#2C2623] hover:bg-black active:scale-[0.98] text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
+                    >
+                      {isPublishing === 'tiktok' ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Memproses...</span>
+                        </>
+                      ) : tiktokMode === 'shareNow' ? (
+                        <>
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                          </svg>
+                          <span>Posting Sekarang</span>
+                        </>
+                      ) : tiktokMode === 'customScheduled' ? (
+                        <>
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                          </svg>
+                          <span>Jadwalkan ke TikTok</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="8" y1="6" x2="21" y2="6" />
+                            <line x1="8" y1="12" x2="21" y2="12" />
+                            <line x1="8" y1="18" x2="21" y2="18" />
+                            <line x1="3" y1="6" x2="3.01" y2="6" />
+                            <line x1="3" y1="12" x2="3.01" y2="12" />
+                            <line x1="3" y1="18" x2="3.01" y2="18" />
+                          </svg>
+                          <span>Masukkan Antrean</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
