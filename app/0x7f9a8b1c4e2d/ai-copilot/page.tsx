@@ -43,61 +43,111 @@ interface PromoData {
 
 type PublishMode = 'shareNow' | 'customScheduled' | 'addToQueue';
 
-interface PromoImageItem {
+interface PromoPosterItem {
   id: string;
-  name: string;
+  title: string;
+  foodName: string;
   category: string;
-  url: string;
+  accentColor: string;
+  bgUrl: string;
 }
 
-const PROMO_IMAGE_PRESETS: PromoImageItem[] = [
+const PROMO_POSTER_POOL: PromoPosterItem[] = [
   {
-    id: 'prasmanan',
-    name: 'Prasmanan Nusantara Lengkap',
+    id: 'poster-1',
+    title: 'SPESIAL PRASMANAN NUSANTARA',
+    foodName: 'Aneka Lauk & Sayur Matang Fresh Dari Dapur',
     category: 'Prasmanan',
-    url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1000&q=80',
+    accentColor: '#800020',
+    bgUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 'ayam-lengkuas',
-    name: 'Ayam Goreng Lengkuas Rempah',
-    category: 'Lauk',
-    url: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=1000&q=80',
+    id: 'poster-2',
+    title: 'GURIH RENYAH AYAM LENGKUAS',
+    foodName: 'Ayam Goreng Lengkuas Rempah Pilihan',
+    category: 'Lauk Andalan',
+    accentColor: '#C05621',
+    bgUrl: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 'rendang-sapi',
-    name: 'Rendang Daging Sapi Mantap',
-    category: 'Lauk',
-    url: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?auto=format&fit=crop&w=1000&q=80',
+    id: 'poster-3',
+    title: 'RENDANG DAGING SAPI JUARA',
+    foodName: 'Rendang Sapi Masak Lambat 8 Jam Bumbu Meresap',
+    category: 'Spesial Daging',
+    accentColor: '#7B1113',
+    bgUrl: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 'sayur-kangkung',
-    name: 'Tumis Kangkung & Sayur Matang',
-    category: 'Sayur',
-    url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1000&q=80',
+    id: 'poster-4',
+    title: 'SEGARNYA TUMIS KANGKUNG',
+    foodName: 'Tumis Kangkung & Sayuran Bumbu Bawang Wangi',
+    category: 'Sayur Segar',
+    accentColor: '#2F855A',
+    bgUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 'nasi-box',
-    name: 'Paket Nasi Box & Katering',
+    id: 'poster-5',
+    title: 'PAKET HEMAT NASI BOX',
+    foodName: 'Nasi Box Praktis Siap Antar Untuk Rapat & Hajatan',
     category: 'Katering',
-    url: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1000&q=80',
+    accentColor: '#DD6B20',
+    bgUrl: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 'ikan-balado',
-    name: 'Ikan Bakar & Balado Pedas',
-    category: 'Lauk',
-    url: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1000&q=80',
+    id: 'poster-6',
+    title: 'IKAN BALADO REMPAH PEDAS',
+    foodName: 'Ikan Segar Goreng Bumbu Balado Gurih Nampol',
+    category: 'Lauk Laut',
+    accentColor: '#C53030',
+    bgUrl: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 'cemilan-gorengan',
-    name: 'Aneka Gorengan & Cemilan Hangat',
+    id: 'poster-7',
+    title: 'GORENGAN HANGAT & CRISPY',
+    foodName: 'Bakwan & Pisang Goreng Manis Legit',
     category: 'Cemilan',
-    url: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?auto=format&fit=crop&w=1000&q=80',
+    accentColor: '#D69E2E',
+    bgUrl: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    id: 'minuman-es',
-    name: 'Es Teh Manis & Minuman Segar',
+    id: 'poster-8',
+    title: 'SEGARNYA ES TEH & MINUMAN',
+    foodName: 'Pelepas Dahaga Manis Dingin Segar',
     category: 'Minuman',
-    url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=1000&q=80',
+    accentColor: '#319795',
+    bgUrl: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'poster-9',
+    title: 'MAKAN SIANG PUAS KELUARGA',
+    foodName: 'Pilihan Prasmanan Meja Penuh Aneka Rasa',
+    category: 'Promo Keluarga',
+    accentColor: '#800020',
+    bgUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'poster-10',
+    title: 'SAMBAL PEDAS KHAS NUSANTARA',
+    foodName: 'Sambal Uleg Dadak & Lalapan Segar Petik Pagi',
+    category: 'Spesial Pedas',
+    accentColor: '#9B2C2C',
+    bgUrl: 'https://images.unsplash.com/photo-1596797038530-2c107229654b?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'poster-11',
+    title: 'SATE AYAM BUMBU KACANG',
+    foodName: 'Sate Daging Empuk Bumbu Kacang Gurih Kental',
+    category: 'Lauk Favorit',
+    accentColor: '#975A16',
+    bgUrl: 'https://images.unsplash.com/photo-1529563021893-cc83c914d73e?auto=format&fit=crop&w=1200&q=80',
+  },
+  {
+    id: 'poster-12',
+    title: 'SOTO HANGAT KUAH BENING',
+    foodName: 'Kuah Rempah Hangat Menemani Siang Harimu',
+    category: 'Kuah Hangat',
+    accentColor: '#B7791F',
+    bgUrl: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=1200&q=80',
   },
 ];
 
@@ -142,10 +192,22 @@ export default function AICopilotPage() {
   const [tiktokScheduleDate, setTiktokScheduleDate] = useState('');
 
   // Image attachment states for Buffer Social Media posting
-  const [availableImages, setAvailableImages] = useState<PromoImageItem[]>(PROMO_IMAGE_PRESETS);
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string>(PROMO_IMAGE_PRESETS[0].url);
-  const [selectedImageName, setSelectedImageName] = useState<string>(PROMO_IMAGE_PRESETS[0].name);
+const [posterPool, setPosterPool] = useState<PromoPosterItem[]>(PROMO_POSTER_POOL);
+  const [currentPoster, setCurrentPoster] = useState<PromoPosterItem>(PROMO_POSTER_POOL[0]);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>(PROMO_POSTER_POOL[0].bgUrl);
   const [customImageUrl, setCustomImageUrl] = useState<string>('');
+  const [isDownloadingPoster, setIsDownloadingPoster] = useState(false);
+
+  // Fungsi mengacak poster secara otomatis setiap kali generate promo
+  const randomizePoster = (poolToUse?: PromoPosterItem[]) => {
+    const list = poolToUse || posterPool;
+    if (!list || list.length === 0) return;
+    const otherPosters = list.filter((p) => p.bgUrl !== selectedImageUrl);
+    const pool = otherPosters.length > 0 ? otherPosters : list;
+    const randomItem = pool[Math.floor(Math.random() * pool.length)];
+    setCurrentPoster(randomItem);
+    setSelectedImageUrl(randomItem.bgUrl);
+  };
 
   // WhatsApp / Fonnte states
   const [fonnteStatus, setFonnteStatus] = useState<FonnteStatus | null>(null);
@@ -201,18 +263,20 @@ export default function AICopilotPage() {
           .neq('image', '');
 
         if (data && data.length > 0) {
-          const publicMenuImages = data
+          const publicMenuImages: PromoPosterItem[] = data
             .filter((m) => m.image && m.image.startsWith('http'))
             .map((m) => ({
               id: `menu-${m.id}`,
-              name: m.name,
-              category: m.category || 'Menu',
-              url: m.image,
+              title: `PROMO ${m.name.toUpperCase()}`,
+              foodName: m.name,
+              category: m.category || 'Menu Resto',
+              accentColor: '#800020',
+              bgUrl: m.image,
             }));
           if (publicMenuImages.length > 0) {
-            setAvailableImages((prev) => {
-              const existingUrls = new Set(prev.map((p) => p.url));
-              const uniqueNewItems = publicMenuImages.filter((p) => !existingUrls.has(p.url));
+            setPosterPool((prev) => {
+              const existingUrls = new Set(prev.map((p) => p.bgUrl));
+              const uniqueNewItems = publicMenuImages.filter((p) => !existingUrls.has(p.bgUrl));
               return [...prev, ...uniqueNewItems];
             });
           }
@@ -220,8 +284,98 @@ export default function AICopilotPage() {
       } catch (err) {
         console.warn('Supabase menu images fetch failed:', err);
       }
-    })();
-  }, []);
+    })();  }, []);
+
+  // Fungsi download poster promo ke format PNG siap posting
+  const handleDownloadPoster = () => {
+    setIsDownloadingPoster(true);
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1080;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      setIsDownloadingPoster(false);
+      return;
+    }
+
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.src = currentPoster.bgUrl;
+
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, 1080, 1080);
+
+      // Gradient overlay
+      const gradient = ctx.createLinearGradient(0, 0, 0, 1080);
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
+      gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.25)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.88)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 1080, 1080);
+
+      // Top Header Badge
+      ctx.fillStyle = '#800020';
+      ctx.beginPath();
+      ctx.roundRect(70, 70, 360, 60, 18);
+      ctx.fill();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText('WAROENG MAKAN 123', 95, 108);
+
+      // Category Pill
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.beginPath();
+      ctx.roundRect(70, 150, 220, 44, 12);
+      ctx.fill();
+      ctx.fillStyle = '#FFF9F2';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.fillText(currentPoster.category.toUpperCase(), 90, 178);
+
+      // Main Headline Promo
+      const displayTitle = promptInput.trim() ? promptInput.trim().toUpperCase() : currentPoster.title;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '900 56px sans-serif';
+      const words = displayTitle.split(' ');
+      let line = '';
+      let y = 780;
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > 940 && n > 0) {
+          ctx.fillText(line.trim(), 70, y);
+          line = words[n] + ' ';
+          y += 66;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line.trim(), 70, y);
+
+      // Subtitle
+      ctx.fillStyle = '#F3E6D5';
+      ctx.font = '500 28px sans-serif';
+      ctx.fillText(currentPoster.foodName, 70, y + 50);
+
+      // Footer
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(0, 990, 1080, 90);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '600 22px sans-serif';
+      ctx.fillText('📍 Gg. Dahlia, Sumampir, Purwokerto Utara   •   📞 0812-3456-7890', 70, 1045);
+
+      const link = document.createElement('a');
+      link.download = `poster-promo-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      setIsDownloadingPoster(false);
+    };
+
+    img.onerror = () => {
+      window.open(currentPoster.bgUrl, '_blank');
+      setIsDownloadingPoster(false);
+    };
+  };
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -235,6 +389,9 @@ export default function AICopilotPage() {
 
     setIsGenerating(true);
     setNotification(null);
+
+    // Otomatis acak poster promo baru di setiap generate agar foto selalu segar dan berganti!
+    randomizePoster();
 
     try {
       const res = await fetch('/api/copilot/generate-promo', {
@@ -562,12 +719,12 @@ export default function AICopilotPage() {
               AI Suggestions
             </span>
 
-            {/* SECTION PILIH FOTO LAMPIRAN POSTINGAN SOSIAL MEDIA */}
+            {/* SECTION POSTER PROMO OTOMATIS (AUTO-GENERATED PROMO BANNER) */}
             <div className="bg-white rounded-3xl p-5 xl:p-6 border border-[#EBE5D8] shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#F0ECE6] pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#F0ECE6] pb-3.5">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#8E3B24]/10 text-[#8E3B24] flex items-center justify-center shrink-0">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <div className="w-9 h-9 rounded-2xl bg-[#800020]/10 text-[#800020] flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                       <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                       <circle cx="8.5" cy="8.5" r="1.5" />
                       <polyline points="21 15 16 10 5 21" />
@@ -575,94 +732,109 @@ export default function AICopilotPage() {
                   </div>
                   <div>
                     <h3 className="text-xs xl:text-sm font-bold text-[#2C2623] flex items-center gap-2">
-                      <span>Pilih Foto Lampiran Postingan (Instagram & TikTok)</span>
+                      <span>Poster Promo Otomatis</span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        ● Berganti Acak Otomatis
+                      </span>
                     </h3>
                     <p className="text-[11px] text-[#736D69] mt-0.5">
-                      Pilih foto hidangan yang cocok dengan ide promo agar postingan bervariasi dan menarik selera pembeli.
+                      Setiap kali promo di-generate, sistem otomatis menyiapkan poster promo baru dengan tema makanan yang berbeda.
                     </p>
                   </div>
                 </div>
 
+                {/* Tombol Acak & Download */}
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[11px] text-stone-400 font-medium">Foto Terpilih:</span>
-                  <div className="inline-flex items-center gap-1.5 bg-[#8E3B24]/10 border border-[#8E3B24]/20 px-2.5 py-1 rounded-xl text-xs font-bold text-[#8E3B24]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#8E3B24] animate-pulse" />
-                    <span className="truncate max-w-[170px]">{selectedImageName}</span>
+                  <button
+                    type="button"
+                    onClick={() => randomizePoster()}
+                    className="inline-flex items-center gap-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200/80 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs active:scale-98"
+                    title="Acak poster lain dari koleksi"
+                  >
+                    <span>🎲</span>
+                    <span>Acak Poster Lain</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadPoster}
+                    disabled={isDownloadingPoster}
+                    className="inline-flex items-center gap-1.5 bg-[#800020] hover:bg-[#66001A] text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs active:scale-98 disabled:opacity-50"
+                  >
+                    <span>📥</span>
+                    <span>{isDownloadingPoster ? 'Mengunduh...' : 'Unduh Poster (PNG)'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Banner Visual Poster Promo Interaktif */}
+              <div className="relative rounded-2xl overflow-hidden border border-[#EBE5D8] bg-stone-900 shadow-md group">
+                <div className="relative h-44 sm:h-52 w-full overflow-hidden">
+                  <img
+                    src={currentPoster.bgUrl}
+                    alt={currentPoster.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-75"
+                  />
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30" />
+
+                  {/* Header Badge di dalam Gambar */}
+                  <div className="absolute top-3.5 left-4 right-4 flex items-center justify-between">
+                    <span className="bg-[#800020] text-white font-extrabold text-[10px] tracking-wider uppercase px-3 py-1 rounded-full shadow-md">
+                      Waroeng Makan 123 • Promo
+                    </span>
+                    <span className="bg-black/60 backdrop-blur-md text-[#FFF9F2] text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-white/10">
+                      {currentPoster.category}
+                    </span>
+                  </div>
+
+                  {/* Teks Judul Promo di Tengah Bawah */}
+                  <div className="absolute bottom-3 left-4 right-4 space-y-1">
+                    <h4 className="text-base sm:text-xl font-black text-white tracking-tight drop-shadow-md line-clamp-1">
+                      {promptInput.trim() ? promptInput.trim().toUpperCase() : currentPoster.title}
+                    </h4>
+                    <p className="text-xs text-[#F3E6D5] drop-shadow-sm font-medium line-clamp-1">
+                      {currentPoster.foodName} • Makan Puas Masakan Nusantara Hangat
+                    </p>
+                    <div className="pt-1 flex items-center gap-3 text-[10px] text-white/80">
+                      <span>📍 Gg. Dahlia, Sumampir, Purwokerto</span>
+                      <span>•</span>
+                      <span>📞 WhatsApp: 0812-3456-7890</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Grid Thumbnail Pilihan Foto */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
-                {availableImages.map((img) => {
-                  const isSelected = selectedImageUrl === img.url;
-                  return (
-                    <button
-                      key={img.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedImageUrl(img.url);
-                        setSelectedImageName(img.name);
-                      }}
-                      className={`group relative rounded-2xl overflow-hidden border-2 transition-all cursor-pointer text-left flex flex-col ${
-                        isSelected
-                          ? 'border-[#8E3B24] ring-2 ring-[#8E3B24]/20 shadow-sm'
-                          : 'border-[#F0ECE6] hover:border-stone-400 hover:shadow-xs'
-                      }`}
-                    >
-                      <div className="aspect-square w-full relative bg-stone-100 overflow-hidden">
-                        <img
-                          src={img.url}
-                          alt={img.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          loading="lazy"
-                        />
-                        {isSelected && (
-                          <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#8E3B24] text-white rounded-full flex items-center justify-center text-[10px] shadow-sm font-bold">
-                            ✓
-                          </div>
-                        )}
-                        <span className="absolute bottom-1 left-1 bg-black/60 backdrop-blur-xs text-white text-[9px] px-1.5 py-0.5 rounded-md font-semibold">
-                          {img.category}
+              {/* Strip Pilihan Cepat 6 Tema Poster */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between text-[11px] text-stone-500 font-medium">
+                  <span>Atau pilih langsung tema poster favorit:</span>
+                  <span className="text-[#800020] font-bold">Total {posterPool.length} Variasi Poster Tersedia</span>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {posterPool.slice(0, 6).map((poster) => {
+                    const isSelected = selectedImageUrl === poster.bgUrl;
+                    return (
+                      <button
+                        key={poster.id}
+                        type="button"
+                        onClick={() => {
+                          setCurrentPoster(poster);
+                          setSelectedImageUrl(poster.bgUrl);
+                        }}
+                        className={`p-1 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2 ${
+                          isSelected
+                            ? 'bg-[#800020]/10 border-[#800020] ring-1 ring-[#800020]'
+                            : 'bg-[#FAF8F5] border-[#EBE5D8] hover:border-stone-400'
+                        }`}
+                      >
+                        <img src={poster.bgUrl} alt={poster.foodName} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                        <span className="text-[10px] font-semibold text-stone-800 truncate block leading-tight">
+                          {poster.category}
                         </span>
-                      </div>
-                      <div className="p-1.5 bg-[#FAF8F5] flex-1">
-                        <p className="text-[10px] font-medium text-stone-700 truncate leading-tight" title={img.name}>
-                          {img.name}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Opsi Custom URL Foto */}
-              <div className="pt-1 flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
-                <span className="text-stone-500 font-medium shrink-0 text-[11px]">
-                  Atau gunakan URL foto sendiri:
-                </span>
-                <div className="flex-1 flex gap-2">
-                  <input
-                    type="url"
-                    placeholder="https://images.unsplash.com/... atau link foto publik lainnya"
-                    value={customImageUrl}
-                    onChange={(e) => setCustomImageUrl(e.target.value)}
-                    className="flex-1 bg-[#FAF8F5] border border-[#EBE5D8] rounded-xl px-3 py-1.5 text-xs text-[#2C2623] focus:outline-none focus:border-[#8E3B24] transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (customImageUrl.trim().startsWith('http')) {
-                        setSelectedImageUrl(customImageUrl.trim());
-                        setSelectedImageName('Foto Kustom Pengguna');
-                      } else {
-                        alert('Silakan masukkan link foto yang valid (diawali http:// atau https://)');
-                      }
-                    }}
-                    className="bg-stone-200 hover:bg-stone-300 text-stone-800 px-3 py-1.5 rounded-xl font-medium cursor-pointer transition-colors shrink-0 text-xs"
-                  >
-                    Terapkan Foto
-                  </button>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -702,12 +874,12 @@ export default function AICopilotPage() {
                   <div className="flex items-center gap-2.5 p-2 bg-[#FAF8F5] rounded-xl border border-[#F0ECE6]">
                     <img
                       src={selectedImageUrl}
-                      alt={selectedImageName}
+                      alt={currentPoster.foodName}
                       className="w-9 h-9 rounded-lg object-cover border border-[#EBE5D8] shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <span className="text-[10px] text-stone-400 font-medium block">Foto Lampiran Posting:</span>
-                      <span className="text-xs font-semibold text-stone-800 truncate block">{selectedImageName}</span>
+                      <span className="text-xs font-semibold text-stone-800 truncate block">{currentPoster.foodName}</span>
                     </div>
                     <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md shrink-0">
                       Terlampir
@@ -718,12 +890,12 @@ export default function AICopilotPage() {
                   <div className="flex items-center gap-2.5 p-2 bg-[#FAF8F5] rounded-xl border border-[#F0ECE6]">
                     <img
                       src={selectedImageUrl}
-                      alt={selectedImageName}
+                      alt={currentPoster.foodName}
                       className="w-9 h-9 rounded-lg object-cover border border-[#EBE5D8] shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <span className="text-[10px] text-stone-400 font-medium block">Foto Lampiran Posting:</span>
-                      <span className="text-xs font-semibold text-stone-800 truncate block">{selectedImageName}</span>
+                      <span className="text-xs font-semibold text-stone-800 truncate block">{currentPoster.foodName}</span>
                     </div>
                     <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md shrink-0">
                       Terlampir
