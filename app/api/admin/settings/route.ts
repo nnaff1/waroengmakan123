@@ -1,7 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 
-export async function GET() {
+// ─── Helper: validasi session cookie ─────────────────────────────────────────
+function isAuthenticated(req: NextRequest): boolean {
+  const cookie = req.cookies.get('waroeng_admin_session')?.value;
+  if (!cookie) return false;
+  try {
+    const decoded = JSON.parse(Buffer.from(cookie, 'base64').toString('utf-8'));
+    if (!decoded.email || !decoded.expiresAt) return false;
+    if (Date.now() > decoded.expiresAt) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function GET(req: NextRequest) {
+  // Lindungi endpoint: hanya admin yang sudah login yang boleh akses
+  if (!isAuthenticated(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { data, error } = await supabase
       .from('settings')
@@ -13,6 +32,12 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Jangan kembalikan pin_code ke client! Sembunyikan dari response
+    if (data) {
+      const { pin_code, ...safeData } = data;
+      return NextResponse.json({ data: safeData });
+    }
+
     return NextResponse.json({ data });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
@@ -20,6 +45,11 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  // Lindungi endpoint: hanya admin yang sudah login yang boleh update settings
+  if (!isAuthenticated(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { action } = body;
@@ -50,7 +80,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ success: true, pin_code, admin_email, data });
+      return NextResponse.json({ success: true, admin_email, data: { id: data?.id, admin_email } });
     }
 
     // Default: update semua settings

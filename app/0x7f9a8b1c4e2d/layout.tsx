@@ -7,8 +7,8 @@ import { usePathname } from 'next/navigation';
 import { ADMIN_BASE_PATH } from '@/lib/adminConfig';
 import { supabase } from '@/lib/supabaseClient';
 
-const ADMIN_DEFAULT_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@waroengmakan123.com').toLowerCase().trim();
-const ADMIN_DEFAULT_PASSWORD = (process.env.NEXT_PUBLIC_ADMIN_PIN || '2026').trim();
+// ⚠️ TIDAK ADA lagi validasi password di sisi client!
+// Semua otentikasi dilakukan server-side via /api/admin/login
 
 export default function AdminLayout({
   children,
@@ -20,10 +20,10 @@ export default function AdminLayout({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [inputEmail, setInputEmail] = useState('');
   const [inputPassword, setInputPassword] = useState('');
-  const [validEmail, setValidEmail] = useState(ADMIN_DEFAULT_EMAIL);
-  const [validPassword, setValidPassword] = useState(ADMIN_DEFAULT_PASSWORD);
   const [currentAdminEmail, setCurrentAdminEmail] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
+  const [isLockedOut, setIsLockedOut] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -60,54 +60,53 @@ export default function AdminLayout({
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
+  // Cek session valid via /api/admin/session-check (server verifikasi cookie)
   useEffect(() => {
-    const authStatus = sessionStorage.getItem('waroeng_admin_auth');
-    const savedEmail = sessionStorage.getItem('waroeng_admin_email') || ADMIN_DEFAULT_EMAIL;
-    if (authStatus === 'true') {
-      setIsAuthenticated(true);
-      setCurrentAdminEmail(savedEmail);
-    }
-
-    const fetchValidCredentials = async () => {
+    const checkSession = async () => {
       try {
-        const res = await fetch('/api/admin/settings');
+        const res = await fetch('/api/admin/session-check');
         if (res.ok) {
           const json = await res.json();
-          if (json?.data) {
-            if (json.data.pin_code) setValidPassword(String(json.data.pin_code).trim());
-            if (json.data.admin_email) setValidEmail(String(json.data.admin_email).toLowerCase().trim());
-            const oH = json.data.open_hour || '07:00';
-            const cH = json.data.close_hour || '19:00';
-            setOperatingHours({ open: oH, close: cH });
-            setIsRestoOpen(evaluateRestoOpen(oH, cH));
+          if (json?.authenticated && json?.email) {
+            setIsAuthenticated(true);
+            setCurrentAdminEmail(json.email);
+            // Ambil settings operasional jika sudah authenticated
+            fetchOperatingHours();
             return;
           }
-
-          return;
         }
-        const { data } = await supabase
-          .from('settings')
-          .select('*')
-          .eq('id', 1)
-          .maybeSingle();
-        if (data?.pin_code) {
-          setValidPassword(String(data.pin_code).trim());
-        }
-        if (data?.admin_email) {
-          setValidEmail(String(data.admin_email).toLowerCase().trim());
-          const oH = data.open_hour || '07:00';
-          const cH = data.close_hour || '19:00';
-          setOperatingHours({ open: oH, close: cH });
-          setIsRestoOpen(evaluateRestoOpen(oH, cH));
-        }
-      } catch (err) {
-        console.error('Error fetching admin credentials:', err);
+      } catch {
+        // Tidak ada session valid
       } finally {
         setIsLoadingAuth(false);
       }
     };
 
-    fetchValidCredentials();
+    const fetchOperatingHours = async () => {
+      try {
+        const res = await fetch('/api/admin/settings');
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.data) {
+            const oH = json.data.open_hour || '07:00';
+            const cH = json.data.close_hour || '19:00';
+            setOperatingHours({ open: oH, close: cH });
+            setIsRestoOpen(evaluateRestoOpen(oH, cH));
+          }
+        } else {
+          // Fallback ke supabase jika settings belum bisa diakses
+          const { data } = await supabase.from('settings').select('open_hour, close_hour').eq('id', 1).maybeSingle();
+          if (data) {
+            const oH = data.open_hour || '07:00';
+            const cH = data.close_hour || '19:00';
+            setOperatingHours({ open: oH, close: cH });
+            setIsRestoOpen(evaluateRestoOpen(oH, cH));
+          }
+        }
+      } catch { /* ignore */ }
+    };
+
+    checkSession();
   }, []);
 
   useEffect(() => {
@@ -123,8 +122,12 @@ export default function AdminLayout({
     }
   }, [isAuthenticated, isLoadingAuth]);
 
+  // ─── LOGIN: semua validasi di server via /api/admin/login ───────────────────
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isLockedOut) return;
+
     const emailTrimmed = inputEmail.trim().toLowerCase();
     const passTrimmed = inputPassword.trim();
 
@@ -139,68 +142,57 @@ export default function AdminLayout({
     setErrorMsg('');
 
     try {
-      // Selalu ambil kredensial paling segar langsung dari database Supabase
-      let activePassword = validPassword;
-      let activeEmail = validEmail;
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailTrimmed, password: passTrimmed }),
+        credentials: 'same-origin', // pastikan cookie tersimpan
+      });
 
-      let serverData: any = null;
-      try {
-        const res = await fetch('/api/admin/settings');
-        if (res.ok) {
-          const json = await res.json();
-          serverData = json?.data;
-        }
-      } catch { }
-      const { data } = serverData ? { data: serverData } : await supabase
-        .from('settings')
-        .select('pin_code, admin_email')
-        .eq('id', 1)
-        .maybeSingle();
+      const json = await res.json();
 
-      if (data) {
-        if (data.pin_code) {
-          activePassword = String(data.pin_code).trim();
-          setValidPassword(activePassword);
-        }
-        if (data.admin_email) {
-          activeEmail = String(data.admin_email).toLowerCase().trim();
-          setValidEmail(activeEmail);
-        }
-      }
-
-      // Validasi KETAT: hanya cocokkan dengan kredensial aktif saat ini
-      if (emailTrimmed !== activeEmail) {
-        setErrorMsg('Email tidak terdaftar sebagai admin.');
+      if (res.status === 429) {
+        // Rate limited / locked out
+        setIsLockedOut(true);
+        setErrorMsg(json.error || 'Terlalu banyak percobaan. Coba lagi nanti.');
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 400);
-        emailInputRef.current?.focus();
-      } else if (passTrimmed !== activePassword) {
-        setErrorMsg('Password salah! Akses ditolak.');
+      } else if (res.status === 401) {
+        // Kredensial salah
+        setRemainingAttempts(json.remainingAttempts ?? null);
+        setErrorMsg(json.error || 'Email atau password salah.');
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 400);
         passwordInputRef.current?.focus();
-      } else {
-        sessionStorage.setItem('waroeng_admin_auth', 'true');
-        sessionStorage.setItem('waroeng_admin_email', emailTrimmed);
-        setCurrentAdminEmail(emailTrimmed);
+      } else if (res.ok && json.success) {
+        // Login berhasil — server sudah set HttpOnly cookie
         setIsAuthenticated(true);
+        setCurrentAdminEmail(json.email || emailTrimmed);
         setErrorMsg('');
+        setRemainingAttempts(null);
         setInputPassword('');
         setInputEmail('');
+        // Ambil settings setelah login berhasil
+        try {
+          const settingsRes = await fetch('/api/admin/settings');
+          if (settingsRes.ok) {
+            const settingsJson = await settingsRes.json();
+            if (settingsJson?.data) {
+              const oH = settingsJson.data.open_hour || '07:00';
+              const cH = settingsJson.data.close_hour || '19:00';
+              setOperatingHours({ open: oH, close: cH });
+              setIsRestoOpen(evaluateRestoOpen(oH, cH));
+            }
+          }
+        } catch { /* ignore */ }
+      } else {
+        setErrorMsg(json.error || 'Login gagal. Coba lagi.');
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 400);
       }
     } catch (err) {
-      console.error('Login error:', err);
-      if (emailTrimmed === validEmail && passTrimmed === validPassword) {
-        sessionStorage.setItem('waroeng_admin_auth', 'true');
-        sessionStorage.setItem('waroeng_admin_email', emailTrimmed);
-        setCurrentAdminEmail(emailTrimmed);
-        setIsAuthenticated(true);
-        setErrorMsg('');
-        setInputPassword('');
-        setInputEmail('');
-      } else {
-        setErrorMsg('Password salah atau koneksi database terputus.');
-      }
+      console.error('Login network error:', err);
+      setErrorMsg('Koneksi bermasalah. Pastikan terhubung ke internet.');
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 400);
     } finally {
@@ -208,13 +200,20 @@ export default function AdminLayout({
     }
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('waroeng_admin_auth');
-    sessionStorage.removeItem('waroeng_admin_email');
+  // ─── LOGOUT: hapus session cookie via server ────────────────────────────────
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/login', {
+        method: 'DELETE',
+        credentials: 'same-origin',
+      });
+    } catch { /* ignore */ }
     setIsAuthenticated(false);
     setInputPassword('');
     setInputEmail('');
     setCurrentAdminEmail('');
+    setRemainingAttempts(null);
+    setIsLockedOut(false);
   };
 
   const navItems = [
