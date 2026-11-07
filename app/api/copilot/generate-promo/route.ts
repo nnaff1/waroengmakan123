@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { isAdminRequest } from '@/lib/adminAuth';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
@@ -35,12 +36,20 @@ function getFallbackPromo(idea: string): GeneratedPromoResponse {
 }
 
 export async function POST(req: NextRequest) {
+  // Hanya admin yang sudah login yang bisa generate promo (mencegah pemborosan API key)
+  if (!isAdminRequest(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { idea } = await req.json();
 
     if (!idea || typeof idea !== 'string') {
       return NextResponse.json({ error: 'Ide promo wajib diisi.' }, { status: 400 });
     }
+
+    // Batasi panjang + sanitasi input (anti prompt injection & DoS)
+    const cleanIdea = idea.trim().slice(0, 500).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
     let menuContext = '';
     let restoContext = 'WaroengMakan123, Restoran Masakan Nusantara Modern & Prasmanan Bersih';
@@ -69,7 +78,7 @@ Karakter restoran: Prasmanan Nusantara modern, bumbu balado khas gurih pedas nam
 Daftar menu andalan: ${menuContext || 'Ayam Balado, Tumis Kangkung, Mochi Dingin, Es Teh Manis, Nasi Putih'}.
 
 TUGAS:
-Buatkan draf teks promosi yang menggugah selera, santai, dan siap langsung diposting berdasarkan ide: "${idea}".
+Buatkan draf teks promosi yang menggugah selera, santai, dan siap langsung diposting berdasarkan ide: "${cleanIdea}".
 
 ATURAN:
 - Jangan menyertakan istilah teknis video (JANGAN tulis hook 0-3 detik, storyboard, scene, voiceover, angle kamera, dll).

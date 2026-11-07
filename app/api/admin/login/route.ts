@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { signSession, SESSION_DURATION_MS } from '@/lib/adminAuth';
 
-// ─── In-memory Rate Limiter ───────────────────────────────────────────────────
-// Menyimpan jumlah percobaan gagal per IP address
-// Key: IP string, Value: { count: number, lockUntil: number | null }
+// ─── Rate Limiter (In-Memory sebagai lapisan cepat pertama) ──────────────────
 const loginAttempts = new Map<string, { count: number; lockUntil: number | null }>();
 
-const MAX_ATTEMPTS = 5;         // Maks 5x gagal sebelum kena lockout
-const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 menit lockout
-const SESSION_DURATION_MS = 8 * 60 * 60 * 1000; // Session berlaku 8 jam
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 menit
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -18,62 +16,61 @@ function getClientIp(req: NextRequest): string {
   );
 }
 
-function getRateLimitRecord(ip: string) {
-  if (!loginAttempts.has(ip)) {
-    loginAttempts.set(ip, { count: 0, lockUntil: null });
-  }
-  return loginAttempts.get(ip)!;
-}
+function checkRateLimit(ip: string): { locked: boolean; remaining: number; lockUntilMs: number | null } {
+  const record = loginAttempts.get(ip) ?? { count: 0, lockUntil: null };
 
-function isLockedOut(ip: string): boolean {
-  const record = getRateLimitRecord(ip);
-  if (record.lockUntil && Date.now() < record.lockUntil) {
-    return true;
-  }
-  // Lock sudah expired, reset
+  // Reset jika lock sudah expired
   if (record.lockUntil && Date.now() >= record.lockUntil) {
     loginAttempts.set(ip, { count: 0, lockUntil: null });
+    return { locked: false, remaining: MAX_ATTEMPTS, lockUntilMs: null };
   }
-  return false;
+
+  if (record.lockUntil && Date.now() < record.lockUntil) {
+    return { locked: true, remaining: 0, lockUntilMs: record.lockUntil };
+  }
+
+  return { locked: false, remaining: MAX_ATTEMPTS - record.count, lockUntilMs: null };
 }
 
-function recordFailedAttempt(ip: string): { remainingAttempts: number; lockedOut: boolean } {
-  const record = getRateLimitRecord(ip);
+function recordFailure(ip: string): { locked: boolean; remaining: number } {
+  const record = loginAttempts.get(ip) ?? { count: 0, lockUntil: null };
   record.count += 1;
 
   if (record.count >= MAX_ATTEMPTS) {
     record.lockUntil = Date.now() + LOCKOUT_DURATION_MS;
     loginAttempts.set(ip, record);
-    return { remainingAttempts: 0, lockedOut: true };
+    return { locked: true, remaining: 0 };
   }
 
   loginAttempts.set(ip, record);
-  return { remainingAttempts: MAX_ATTEMPTS - record.count, lockedOut: false };
+  return { locked: false, remaining: MAX_ATTEMPTS - record.count };
 }
 
-function resetAttempts(ip: string) {
-  loginAttempts.set(ip, { count: 0, lockUntil: null });
+function resetRateLimit(ip: string) {
+  loginAttempts.delete(ip);
 }
 
 // ─── POST /api/admin/login ────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
 
-  // 1. Cek apakah IP sedang dikunci
-  if (isLockedOut(ip)) {
-    const record = getRateLimitRecord(ip);
-    const remainingMs = (record.lockUntil ?? 0) - Date.now();
-    const remainingMinutes = Math.ceil(remainingMs / 60000);
+  // 1. Cek rate limit
+  const rl = checkRateLimit(ip);
+  if (rl.locked) {
+    const mins = Math.ceil(((rl.lockUntilMs ?? 0) - Date.now()) / 60000);
     return NextResponse.json(
-      {
-        error: `Terlalu banyak percobaan login gagal. Coba lagi dalam ${remainingMinutes} menit.`,
-        locked: true,
-      },
+      { error: `Terlalu banyak percobaan gagal. Coba lagi dalam ${mins} menit.`, locked: true },
       { status: 429 }
     );
   }
 
-  // 2. Parse body
+  // 2. Validasi CSRF — wajib ada header X-Requested-With
+  const xrw = req.headers.get('x-requested-with');
+  if (xrw !== 'XMLHttpRequest') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  // 3. Parse body
   let body: { email?: string; password?: string };
   try {
     body = await req.json();
@@ -81,23 +78,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Request tidak valid.' }, { status: 400 });
   }
 
-  const email = String(body.email || '').trim().toLowerCase();
-  const password = String(body.password || '').trim();
+  const email = String(body.email ?? '').trim().toLowerCase();
+  const password = String(body.password ?? '').trim();
 
+  // 4. Validasi input dasar + panjang maksimal (anti injection)
   if (!email || !password) {
     return NextResponse.json({ error: 'Email dan password wajib diisi.' }, { status: 400 });
   }
+  if (email.length > 254 || password.length > 128) {
+    return NextResponse.json({ error: 'Input tidak valid.' }, { status: 400 });
+  }
 
-  // 3. Ambil kredensial dari database (server-side only, tidak pernah bocor ke client)
+  // 5. Ambil kredensial dari server (tidak pernah dikirim ke client)
   let activeEmail: string;
   let activePassword: string;
 
   try {
-    // Coba ambil dari ENV server-side terlebih dahulu (paling aman)
     const envEmail = (process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL || '').toLowerCase().trim();
     const envPin = (process.env.ADMIN_PIN || process.env.NEXT_PUBLIC_ADMIN_PIN || '').trim();
 
-    // Ambil dari database sebagai sumber primer
     const { data, error } = await supabase
       .from('settings')
       .select('pin_code, admin_email')
@@ -109,63 +108,43 @@ export async function POST(req: NextRequest) {
     activeEmail = (data?.admin_email || envEmail || '').toLowerCase().trim();
     activePassword = (data?.pin_code || envPin || '').trim();
   } catch (err) {
-    console.error('[admin/login] Gagal fetch kredensial dari DB:', err);
-    return NextResponse.json(
-      { error: 'Gagal menghubungi server. Coba lagi.' },
-      { status: 503 }
-    );
+    console.error('[admin/login] Gagal fetch kredensial:', err);
+    return NextResponse.json({ error: 'Gagal menghubungi server. Coba lagi.' }, { status: 503 });
   }
 
   if (!activeEmail || !activePassword) {
-    return NextResponse.json(
-      { error: 'Konfigurasi admin belum diatur. Hubungi pengelola sistem.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Konfigurasi admin belum diatur.' }, { status: 500 });
   }
 
-  // 4. Validasi kredensial — dilakukan SEPENUHNYA di server
+  // 6. Validasi kredensial — dilakukan SEPENUHNYA di server
   if (email !== activeEmail || password !== activePassword) {
-    const { remainingAttempts, lockedOut } = recordFailedAttempt(ip);
+    const { locked, remaining } = recordFailure(ip);
 
-    if (lockedOut) {
+    if (locked) {
       return NextResponse.json(
-        {
-          error: `Akses dikunci selama 15 menit karena terlalu banyak percobaan gagal.`,
-          locked: true,
-        },
+        { error: 'Akses dikunci 15 menit karena terlalu banyak percobaan gagal.', locked: true },
         { status: 429 }
       );
     }
 
     return NextResponse.json(
-      {
-        error: `Email atau password salah. Sisa percobaan: ${remainingAttempts}x`,
-        remainingAttempts,
-      },
+      { error: `Email atau password salah. Sisa percobaan: ${remaining}x`, remainingAttempts: remaining },
       { status: 401 }
     );
   }
 
-  // 5. Login berhasil — reset rate limit & set HttpOnly cookie session
-  resetAttempts(ip);
+  // 7. Login berhasil — reset rate limit & set HMAC-signed HttpOnly session cookie
+  resetRateLimit(ip);
 
-  // Buat token session yang aman
-  const sessionToken = Buffer.from(
-    JSON.stringify({
-      email: activeEmail,
-      loginAt: Date.now(),
-      expiresAt: Date.now() + SESSION_DURATION_MS,
-    })
-  ).toString('base64');
+  const sessionToken = signSession(activeEmail);
 
   const response = NextResponse.json({ success: true, email: activeEmail });
 
-  // Set cookie HttpOnly (tidak bisa diakses JS browser) + Secure + SameSite=Strict
   response.cookies.set('waroeng_admin_session', sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: SESSION_DURATION_MS / 1000, // dalam detik
+    maxAge: SESSION_DURATION_MS / 1000,
     path: '/',
   });
 
@@ -173,7 +152,13 @@ export async function POST(req: NextRequest) {
 }
 
 // ─── DELETE /api/admin/login (Logout) ────────────────────────────────────────
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+  // Verifikasi CSRF untuk logout juga
+  const xrw = req.headers.get('x-requested-with');
+  if (xrw !== 'XMLHttpRequest') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const response = NextResponse.json({ success: true });
   response.cookies.set('waroeng_admin_session', '', {
     httpOnly: true,
@@ -184,4 +169,3 @@ export async function DELETE() {
   });
   return response;
 }
-

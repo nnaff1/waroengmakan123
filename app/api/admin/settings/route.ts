@@ -1,23 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
-
-// ─── Helper: validasi session cookie ─────────────────────────────────────────
-function isAuthenticated(req: NextRequest): boolean {
-  const cookie = req.cookies.get('waroeng_admin_session')?.value;
-  if (!cookie) return false;
-  try {
-    const decoded = JSON.parse(Buffer.from(cookie, 'base64').toString('utf-8'));
-    if (!decoded.email || !decoded.expiresAt) return false;
-    if (Date.now() > decoded.expiresAt) return false;
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { isAdminRequest } from '@/lib/adminAuth';
 
 export async function GET(req: NextRequest) {
-  // Lindungi endpoint: hanya admin yang sudah login yang boleh akses
-  if (!isAuthenticated(req)) {
+  if (!isAdminRequest(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -32,21 +18,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Jangan kembalikan pin_code ke client! Sembunyikan dari response
+    // Sembunyikan pin_code dari response — jangan pernah kirim ke client
     if (data) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { pin_code, ...safeData } = data;
       return NextResponse.json({ data: safeData });
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: null });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
-  // Lindungi endpoint: hanya admin yang sudah login yang boleh update settings
-  if (!isAuthenticated(req)) {
+  if (!isAdminRequest(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -58,8 +44,8 @@ export async function POST(req: NextRequest) {
       const pin_code = String(body.pin_code || '').trim();
       const admin_email = String(body.admin_email || '').toLowerCase().trim();
 
-      if (!pin_code) {
-        return NextResponse.json({ error: 'Password admin tidak boleh kosong.' }, { status: 400 });
+      if (!pin_code || pin_code.length < 4) {
+        return NextResponse.json({ error: 'Password admin minimal 4 karakter.' }, { status: 400 });
       }
       if (!admin_email || !admin_email.includes('@')) {
         return NextResponse.json({ error: 'Format email admin tidak valid.' }, { status: 400 });
@@ -67,23 +53,20 @@ export async function POST(req: NextRequest) {
 
       const { data, error } = await supabase
         .from('settings')
-        .update({
-          pin_code,
-          admin_email,
-          updated_at: new Date().toISOString(),
-        })
+        .update({ pin_code, admin_email, updated_at: new Date().toISOString() })
         .eq('id', 1)
-        .select('id, pin_code, admin_email')
+        .select('id, admin_email')
         .maybeSingle();
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
+      // Jangan kembalikan pin_code ke client
       return NextResponse.json({ success: true, admin_email, data: { id: data?.id, admin_email } });
     }
 
-    // Default: update semua settings
+    // Default: update semua settings (kecuali credentials)
     const payload = {
       id: 1,
       resto_name: body.resto_name,
@@ -109,10 +92,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, data });
+    // Sembunyikan pin_code dari response
+    if (data) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { pin_code, ...safeData } = data;
+      return NextResponse.json({ success: true, data: safeData });
+    }
+
+    return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error('[API /api/admin/settings] Error:', err);
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
   }
 }
-

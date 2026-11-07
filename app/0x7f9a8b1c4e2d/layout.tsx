@@ -144,9 +144,12 @@ export default function AdminLayout({
     try {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest', // CSRF protection
+        },
         body: JSON.stringify({ email: emailTrimmed, password: passTrimmed }),
-        credentials: 'same-origin', // pastikan cookie tersimpan
+        credentials: 'same-origin',
       });
 
       const json = await res.json();
@@ -205,6 +208,7 @@ export default function AdminLayout({
     try {
       await fetch('/api/admin/login', {
         method: 'DELETE',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
         credentials: 'same-origin',
       });
     } catch { /* ignore */ }
